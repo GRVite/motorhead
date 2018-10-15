@@ -362,4 +362,4 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     
     return aucorr, width_auto
 
-
+#end
