@@ -11,7 +11,7 @@ from functions_mt import *
 
 #1. Load and accomodate data
 ID= 'Mouse12-120806'
-data_directory = '/home/grvite/navigation_system/motorhead/training/data/'
+data_directory = '../data_read/'
 spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand (data_directory, ID)
 
 #2. Determine the position in the arena
@@ -46,7 +46,7 @@ for i in name_cols:
     df_tun_widths[i].loc[0] = width_gaussian (60, array)
 
 #Save data
-df_tuning.to_hdf('/home/grvite/navigation_system/motorhead/training/data/df_tuning.hdf', 'tuning')
-df_meanfiring.to_csv('/home/grvite/navigation_system/motorhead/training/data/df_mean_firing_rate.csv')
-df_tun_widths.to_csv('/home/grvite/navigation_system/motorhead/training/data/df_tuning_widths.csv')
+df_tuning.to_hdf('../data_output/df_tuning.hdf', 'tuning')
+df_meanfiring.to_csv('../data_output/df_mean_firing_rate.csv')
+df_tun_widths.to_csv('../data_output/df_tuning_widths.csv')
     

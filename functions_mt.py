@@ -22,8 +22,8 @@ from functions_mt import *
 import scipy.io
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import hlines as hlines
-data_directory = '/home/grvite/navigation_system/motorhead/training/data/'
-routea= '/home/grvite/navigation_system/motorhead/training/plots/'
+data_directory = '../data_read/'
+routea= '../plots/'
 routeb= r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/'
 
 """
@@ -95,7 +95,7 @@ def det_pos(data_directory, color, path2save):
     plt.xlabel("x position (cm)")
     plt.ylabel("y position (cm)")
     plt.title("Position of the mouse in the arena")
-    if path2save == 'a': plot_curve = '/home/grvite/navigation_system/motorhead/training/plots/' + 'position_' + '.pdf'
+    if path2save == 'a': plot_curve = '../plots/' + 'position_' + '.pdf'
     elif  path2save == 'b': plot_curve = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'position_' + '.pdf'
     plt.savefig
     plt.show()  
@@ -269,7 +269,7 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     plt.ylabel("Firing rate")
     plt.title("ADn neuron")
     plt.grid()
-    if path2save == 'a': plot_curve = '/home/grvite/navigation_system/motorhead/training/plots/' + 'tuning_curve_' + str(neuro_num) + '.pdf'
+    if path2save == 'a': plot_curve = '../plots/' + 'tuning_curve_' + str(neuro_num) + '.pdf'
     elif  path2save == 'b': plot_curve = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'tuning_curve_' + str(neuro_num) + '.pdf'
     plt.savefig(plot_curve)
     plt.show()
@@ -283,7 +283,7 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     #plt.ylabel("Firing rate")
     plt.title("ADn neuron")
     plt.grid()
-    if path2save == 'a': plot_polar = '/home/grvite/navigation_system/motorhead/training/plots/' + 'tuning_polar_' + str(neuro_num) + '.pdf'
+    if path2save == 'a': plot_polar = '../plots/' + 'tuning_polar_' + str(neuro_num) + '.pdf'
     elif  path2save == 'b': plot_polar = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'tuning_polar_' + str(neuro_num) + '.pdf'
     plt.savefig(plot_polar)
     plt.show()
@@ -356,7 +356,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     plt.xlabel("time")
     #middle horizontal line
     hlines ((nums.max()/2), 0,  nbins, 'r')
-    if path2save == 'a': autocorrelogram = '/home/grvite/navigation_system/motorhead/training/plots/' + 'autocorrelogram_' + str(neuro_num) + '_' + epochstr + '.pdf'
+    if path2save == 'a': autocorrelogram = '../plots/' + 'autocorrelogram_' + str(neuro_num) + '_' + epochstr + '.pdf'
     elif  path2save == 'b': autocorrelogram = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'autocorrelogram_' + str(neuro_num) + '_' + epochstr +'.pdf'
     plt.savefig(autocorrelogram)
     

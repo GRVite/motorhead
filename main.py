@@ -8,11 +8,11 @@ Created on Thu Sep 27 15:14:25 2018
 import pandas as pd
 
 #Read widths of the tuning curves
-tun = pd.read_csv('/home/grvite/navigation_system/motorhead/training/data/df_tuning_widths.csv')
+tun = pd.read_csv('../data/df_tuning_widths.csv')
 tun.drop('Unnamed: 0', axis = 1, inplace = True) #check this
 
 #Read widths of the autocorrelograms
-aut = pd.read_csv('/home/grvite/navigation_system/motorhead/training/data/df_autocorrelation_widths.csv', index_col = 0)
+aut = pd.read_csv('../data_output/df_autocorrelation_widths.csv', index_col = 0)
 
 
 #Check units!

@@ -35,7 +35,7 @@ bin_size=1
 numberofbins=50
 
 #Read mean firing data
-df_meanfiring = pd.read_csv('/home/grvite/navigation_system/motorhead/training/data/df_meanfiring.csv')
+df_meanfiring = pd.read_csv('../data_read/df_meanfiring.csv')
 
 #Create dataframes for all epochs with the information of the autocorrelation and all neurons
 for ep, epl, df in zip (epochs, eplist , lista_df):   
@@ -46,7 +46,7 @@ for ep, epl, df in zip (epochs, eplist , lista_df):
         df_widths[n][epl]= width_auto
 
 #Save data
-df_wake.to_hdf('/home/grvite/navigation_system/motorhead/training/data/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
-df_sws.to_hdf('/home/grvite/navigation_system/motorhead/training/data/df_autocorrelation.hdf', 'df_autocorrelation_sws')
-df_rem.to_hdf('/home/grvite/navigation_system/motorhead/training/data/df_autocorrelation.hdf', 'df_autocorrelatio_remn')
-df_widths.to_csv('/home/grvite/navigation_system/motorhead/training/data/df_autocorrelation_widths.csv')
+df_wake.to_hdf('../data_output/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
+df_sws.to_hdf('../data_output/df_autocorrelation.hdf', 'df_autocorrelation_sws')
+df_rem.to_hdf('/data_output/df_autocorrelation.hdf', 'df_autocorrelatio_remn')
+df_widths.to_csv('/data_output/df_autocorrelation_widths.csv')
