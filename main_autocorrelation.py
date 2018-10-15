@@ -35,18 +35,23 @@ bin_size=1
 numberofbins=50
 
 #Read mean firing data
-df_meanfiring = pd.read_csv('../data_read/df_meanfiring.csv')
+df_meanfiring = pd.DataFrame(index = eplist, columns = name_cols)
+
+#df_meanfiring['wake'pd.read_csv('./data_output/df_mean_firing_rate.csv', index_col = 0)
 
 #Create dataframes for all epochs with the information of the autocorrelation and all neurons
 for ep, epl, df in zip (epochs, eplist , lista_df):   
     for i, n in zip (index, name_cols):  
-        meanfiring = df_meanfiring[n].iloc[0]
+        first_spike, last_spike, bin_size, bins, firing_rate, meanfiring = firetdisco (hd_spikes, i, ep)
+        df_meanfiring[n][epl]= meanfiring
+        print(df_meanfiring)
         aucor, width_auto = plotautco (hd_spikes, i, meanfiring, ep, epl, bin_size, numberofbins, 'a')
         df[n] = pd.Series(data = aucor.flatten())
         df_widths[n][epl]= width_auto
+        print(df_widths)
 
 #Save data
-df_wake.to_hdf('../data_output/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
-df_sws.to_hdf('../data_output/df_autocorrelation.hdf', 'df_autocorrelation_sws')
-df_rem.to_hdf('/data_output/df_autocorrelation.hdf', 'df_autocorrelatio_remn')
-df_widths.to_csv('/data_output/df_autocorrelation_widths.csv')
+df_wake.to_hdf('./data_output/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
+df_sws.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation_sws')
+df_rem.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelatio_remn')
+df_widths.to_csv('./data_output/df_autocorrelation_widths.csv')
