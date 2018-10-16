@@ -216,7 +216,7 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     plt.savefig(plot_polar)
     plt.show()
 
-    return (meanfiring, my_data, tuning_curve, angular_bins)
+    return (my_data, tuning_curve, angular_bins)
 
 
 #Function for Width calculation for the tuning curve
@@ -259,7 +259,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     aucorr = crossCorr(mi_neurona.index, mi_neurona.index, binsize, nbins)
     aucorr [int(nbins/2)] = 0.0
     intervalo = mi_neurona.index.max() - mi_neurona.index.min()
-    #aucorr = aucorr/meanfiring #normalize by the meanfiring rate
+    #aucorr = aucorr/1000/meanfiring #normalize by the meanfiring rate
     
     
     #Smooth the data for an easier calculation of the width
@@ -273,7 +273,9 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     #calculating width
     dic = dict(zip(array, list(range(0,nbins+1)))) 
     lista=[]
-    half_mfr2max= ((array.max() - meanfiring)/2) +meanfiring #help you to calculate the half point between your mean and max firing rate
+    meanfiring = meanfiring
+    half_mfr2max= ((array.max() - meanfiring)/2) +meanfiring
+    print(half_mfr2max, array.max())
     for i in array:
         if i>=half_mfr2max:
             lista.append(i)
@@ -302,3 +304,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     return aucorr, width_auto
 
 #end
+
+first_spike, last_spike, bin_size, bins, firing_rate, meanfiring = firetdisco (hd_spikes, 19, sws_ep)
+aucor, width_auto = plotautco (hd_spikes, 19, meanfiring, sws_ep, 'w', 50, 200, 'a')
+

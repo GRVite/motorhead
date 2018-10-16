@@ -12,36 +12,37 @@ Created on Fri Oct  5 10:53:34 2018
 import pandas as pd
 from functions_mt import *
 
-#1. Load and accomodate data
+"""
+1. Load and accomodate data
+"""
+
 ID= 'Mouse12-120806'
 spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand(data_directory, ID)
-
-#Lists of epochs
-epochs = [wake_ep, sws_ep, rem_ep]
-eplist = ['wake', 'sws', 'rem']
-
-#Make a list of your neurons numbers
+#. Make a list of your neurons numbers
 index = list(hd_spikes.keys())
 keys = list(map(str, index))
 name_cols = list(map(lambda x: ID + '_n_' + x, keys))
-
 # Create individual dataframes to store the autocorrelation data from your different epochs
 df_wake = pd.DataFrame(columns = name_cols)
 df_sws = pd.DataFrame(columns = name_cols)
 df_rem = pd.DataFrame(columns = name_cols)
 lista_df = [df_wake, df_sws, df_rem]
-
-#Dataframe for widths
+#make lists of epochs for the loops and the index of your pandas dataframe 
+eplist = ['wake', 'sws', 'rem']
+epochs = [wake_ep, sws_ep, rem_ep]
+#Dataframe for storing widths
 df_widths = pd.DataFrame(index = eplist, columns = name_cols)
-
-#Determine the bin size and the number of bins for the autocorrelation
-bin_size=1
-numberofbins=50
-
-#Read mean firing data
+#Create pd dataframe for the mean firing rate
 df_meanfiring = pd.DataFrame(index = eplist, columns = name_cols)
 
-#df_meanfiring['wake'pd.read_csv('./data_output/df_mean_firing_rate.csv', index_col = 0)
+
+"""
+2. Compute autocorrelation
+"""
+
+#Determine the bin size and the number of bins for the autocorrelation
+bin_size = 100
+numberofbins = 500
 
 #Create dataframes for all epochs with the information of the autocorrelation and all neurons
 for ep, epl, df in zip (epochs, eplist , lista_df):   
@@ -54,7 +55,10 @@ for ep, epl, df in zip (epochs, eplist , lista_df):
         df_widths[n][epl]= width_auto
         print(df_widths)
 
-#Save data
+"""
+3. Save data in .hdf format
+"""
+
 df_wake.to_hdf('./data_output/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
 df_sws.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation_sws')
 df_rem.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelatio_remn')

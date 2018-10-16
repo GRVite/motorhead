@@ -32,7 +32,7 @@ df_tuning = pd.DataFrame(columns = name_cols)
 df_meanfiring = pd.DataFrame(index=[0], columns = name_cols)
 nabins = 60
 for i, n in zip(index, name_cols):    
-    mean_firing_rate, my_data, tuning_curve, abins = tuneit (data_directory, hd_spikes, wake_ep, mouse_position, i, nabins, 'a')
+    my_data, tuning_curve, abins = tuneit (data_directory, hd_spikes, wake_ep, mouse_position, i, nabins, 'a')
     df_tuning[n] = pd.Series(index = abins[0:-1], data = tuning_curve.flatten())
     df_meanfiring[n].loc[0] = mean_firing_rate
 
