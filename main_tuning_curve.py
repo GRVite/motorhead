@@ -3,6 +3,9 @@
 """
 Created on Thu Oct  4 17:51:47 2018
 
+This script will help you to compute the tuning curve of all the the data from head direction cells of one animal,
+and it will save the data in a .hdf file located in ./data_output 
+
 @author: grvite
 """
 import pandas as pd

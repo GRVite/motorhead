@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+This script will help you to compute the autocorrelation of all the data 
+from head direction cells of one animal, and it will save the data in a .hdf file 
+located in ./data_output 
+
 Created on Fri Oct  5 10:53:34 2018
 @author: grvite
 """

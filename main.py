@@ -3,8 +3,12 @@
 """
 Created on Thu Sep 27 15:14:25 2018
 
+This script computes the speed of the head direction signal. It reads the data
+from main_tuning_curve and main_autocorrelation, calculates the ratio and plots the results. 
+
 @author: grvite
 """
+
 import pandas as pd
 
 #Read widths of the tuning curves
