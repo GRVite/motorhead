@@ -41,13 +41,13 @@ df_meanfiring = pd.DataFrame(index = eplist, columns = name_cols)
 """
 
 #Determine the bin size and the number of bins for the autocorrelation
-bin_size = 100
-numberofbins = 500
+bin_size = 50
+numberofbins = 200
 
 #Create dataframes for all epochs with the information of the autocorrelation and all neurons
 for ep, epl, df in zip (epochs, eplist , lista_df):   
     for i, n in zip (index, name_cols):  
-        first_spike, last_spike, bin_size, bins, firing_rate, meanfiring = firetdisco (hd_spikes, i, ep)
+        meanfiring = meanfiring_f (hd_spikes, i, ep)
         df_meanfiring[n][epl]= meanfiring
         print(df_meanfiring)
         aucor, width_auto = plotautco (hd_spikes, i, meanfiring, ep, epl, bin_size, numberofbins, 'a')

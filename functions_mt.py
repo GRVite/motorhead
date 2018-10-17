@@ -18,7 +18,6 @@ import pandas as pd
 import neuroseries as nts
 import os
 from functions import *
-from functions_mt import *
 import scipy.io
 import matplotlib.pyplot as plt
 data_directory = './data_read/'
@@ -120,10 +119,20 @@ def firetdisco(hd_spikes, neuro_num, epoch):
     df_cn.fillna(0, inplace=True)
     spike_count = nts.Tsd(t = bins+(bin_size/2.), d = df_cn['counts'].values) #delete, just test
     firing_rate = nts.Tsd(t = bins+(bin_size/2.), d = spike_count.values/(bin_size/1000./1000.))
-    meanfiring = firing_rate.sum()/(duration/1000000)
-    
     return first_spike, last_spike, bin_size, bins, firing_rate, meanfiring
-    
+
+def meanfiring_f(hd_spikes, neuro_num, epoch):
+    #select one neuron
+    my_neuron = hd_spikes[neuro_num]
+    #restrict the activity to one epoch
+    my_neuron = my_neuron.restrict(epoch)
+    #change units to seconds
+    my_neuron.as_units('s')
+    count = my_neuron.index.shape[0]
+    meanf = count/epoch.tot_length('s')
+    return (meanf)
+
+
 """
 D. Tuning curve
 """
@@ -251,14 +260,10 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     my_neuron = my_neuron.restrict(epoch)
     #change units to ms
     mi_neurona = my_neuron.as_units('ms') 
-    first_spike = mi_neurona.index [0]
-    last_spike = mi_neurona.index[-1]
-    duration = last_spike - first_spike
     
     #compute autcorrelation
     aucorr = crossCorr(mi_neurona.index, mi_neurona.index, binsize, nbins)
     aucorr [int(nbins/2)] = 0.0
-    intervalo = mi_neurona.index.max() - mi_neurona.index.min()
     #aucorr = aucorr/1000/meanfiring #normalize by the meanfiring rate
     
     
@@ -284,7 +289,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     index_max = dic[nums.max()]
     width_auto = (abs(index_max-index_min)) *2 +1 #get the distance in bins
     width_auto = width_auto*binsize/1000
-    print("for neuron {0} the width is".format(hd_spikes[neuro_num]), width_auto, ' s')
+    print("for neuron {0} the width is".format(neuro_num), width_auto, ' s')
        
     
     """Plot autocorrelogram"""
@@ -305,6 +310,4 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
 
 #end
 
-first_spike, last_spike, bin_size, bins, firing_rate, meanfiring = firetdisco (hd_spikes, 19, sws_ep)
-aucor, width_auto = plotautco (hd_spikes, 19, meanfiring, sws_ep, 'w', 50, 200, 'a')
 
