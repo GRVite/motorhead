@@ -14,15 +14,14 @@ import pandas as pd
 #Read widths of the tuning curves
 tun = pd.read_csv('./data_output/df_tuning_widths.csv', index_col = 0)
 
-
 #Read widths of the autocorrelograms
 aut = pd.read_csv('./data_output/df_autocorrelation_widths.csv', index_col = 0)
-
 
 #Create dataframe to store the ratio data
 result = pd.DataFrame(index = aut.index, columns = aut.columns)
 eplist = ['wake', 'sws', 'rem']
 
+#Calculate the ratio
 for i in eplist: 
     result.loc[i] = tun.values/aut.loc[i].values
 
