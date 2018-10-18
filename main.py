@@ -12,14 +12,12 @@ from main_tuning_curve and main_autocorrelation, calculates the ratio and plots 
 import pandas as pd
 
 #Read widths of the tuning curves
-tun = pd.read_csv('./data/df_tuning_widths.csv')
-tun.drop('Unnamed: 0', axis = 1, inplace = True) #check this
+tun = pd.read_csv('./data_output/df_tuning_widths.csv', index_col = 0)
+
 
 #Read widths of the autocorrelograms
 aut = pd.read_csv('./data_output/df_autocorrelation_widths.csv', index_col = 0)
 
-
-#Check units!
 
 #Create dataframe to store the ratio data
 result = pd.DataFrame(index = aut.index, columns = aut.columns)
@@ -29,4 +27,9 @@ for i in eplist:
     result.loc[i] = tun.values/aut.loc[i].values
 
 #Plot results
-    result.loc['wake'] = tun.values/aut.loc['wake'].values
+for i in eplist: 
+        errors = result.loc[i].std()
+        result.loc[i].plot.bar(title = "Speed of the needle", yerr = errors)
+        speed = './plots/' + 'barplot_speed' + i
+        plt.savefig(speed)
+
