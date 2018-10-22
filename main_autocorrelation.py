@@ -13,47 +13,51 @@ import pandas as pd
 from functions_mt import *
 
 """
+0. Determine parameters
+"""
+#Determine the bin size and the number of bins for the autocorrelation
+bin_size = 10
+nb_bins = 100
+
+
+"""
 1. Load and accomodate data
 """
-
+#Determine mouse ID
 ID= 'Mouse12-120806'
 spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand(data_directory, ID)
 #. Make a list of your neurons numbers
 index = list(hd_spikes.keys())
 keys = list(map(str, index))
-name_cols = list(map(lambda x: ID + '_n_' + x, keys))
-# Create individual dataframes to store the autocorrelation data from your different epochs
-df_wake = pd.DataFrame(columns = name_cols)
-df_sws = pd.DataFrame(columns = name_cols)
-df_rem = pd.DataFrame(columns = name_cols)
-lista_df = [df_wake, df_sws, df_rem]
+name_ind = list(map(lambda x: ID + '_n_' + x, keys))
+#Determine the real times for the bin size and number of bins selected
+times= np.arange(0, bin_size*(nb_bins+1), bin_size) - (nb_bins*bin_size)/2
+# Create a pd to store the autocorrelation data from your different epochs
+df = pd.DataFrame(index = times, columns = pd.MultiIndex.from_product([name_cols, eplist]))
 #make lists of epochs for the loops and the index of your pandas dataframe 
 eplist = ['wake', 'sws', 'rem']
 epochs = [wake_ep, sws_ep, rem_ep]
 #Dataframe for storing widths
-df_widths = pd.DataFrame(index = eplist, columns = name_cols)
+df_widths = pd.DataFrame(index = name_ind, columns = eplist)
 #Create pd dataframe for the mean firing rate
 df_meanfiring = pd.DataFrame(index = eplist, columns = name_cols)
 
 
 """
-2. Compute autocorrelation
+2. Compute results
 """
 
-#Determine the bin size and the number of bins for the autocorrelation
-bin_size = 50
-numberofbins = 200
 
-#Create dataframes for all epochs with the information of the autocorrelation and all neurons
-for ep, epl, df in zip (epochs, eplist , lista_df):   
-    for i, n in zip (index, name_cols):  
+for ep, epl in zip (epochs, eplist):   
+    for i, n in zip (index, name_ind):
+        #compute width
         meanfiring = meanfiring_f (hd_spikes, i, ep)
-        df_meanfiring[n][epl]= meanfiring
-        print(df_meanfiring)
+        #compute autocorrelation
         aucor, width_auto = plotautco (hd_spikes, i, meanfiring, ep, epl, bin_size, numberofbins, 'a')
-        df[n] = pd.Series(data = aucor.flatten())
-        df_widths[n][epl]= width_auto
-        print(df_widths)
+        #store the values of the autocorrelation
+        df[n, epl]= aucor
+        #store the width
+        df_widths[epl][n]= width_auto
 
 """
 3. Save data in .hdf format
@@ -62,4 +66,4 @@ for ep, epl, df in zip (epochs, eplist , lista_df):
 df_wake.to_hdf('./data_output/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
 df_sws.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation_sws')
 df_rem.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelatio_remn')
-df_widths.to_csv('./data_output/df_autocorrelation_widths.csv')
+df_widths.to_hdf('./data_output/df_autocorrelation_widths.hdf', 'widhts_a')

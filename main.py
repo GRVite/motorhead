@@ -10,12 +10,12 @@ from main_tuning_curve and main_autocorrelation, calculates the ratio and plots 
 """
 
 import pandas as pd
+import numpy as np
 
 #Read widths of the tuning curves
-tun = pd.read_csv('./data_output/df_tuning_widths.csv', index_col = 0)
-
+tun = pd.read_hdf('./data_output/df_tuning_widths.hdf')
 #Read widths of the autocorrelograms
-aut = pd.read_csv('./data_output/df_autocorrelation_widths.csv', index_col = 0)
+aut = pd.read_hdf('./data_output/df_autocorrelation_widths.hdf')
 
 #Create dataframe to store the ratio data
 result = pd.DataFrame(index = aut.index, columns = aut.columns)
@@ -25,10 +25,13 @@ eplist = ['wake', 'sws', 'rem']
 for i in eplist: 
     result.loc[i] = tun.values/aut.loc[i].values
 
+names  = [x[-2:] for x in aut.columns]
+
+from pylab import *
 #Plot results
 for i in eplist: 
         errors = result.loc[i].std()
-        result.loc[i].plot.bar(title = "Speed of the needle", yerr = errors)
+        result.loc[i].plot.bar(title = "Speed of the needle")
+        xticks(np.arange(len(names)), names)
         speed = './plots/' + 'barplot_speed' + i
         plt.savefig(speed)
-

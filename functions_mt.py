@@ -55,7 +55,7 @@ def data_hand(data_directory, ID):
 B. Position in the arena
 """
 def det_pos(data_directory, color, path2save):
-    #load the angular value at each time steps and make a frame of it
+    #load the angular value at each time steps and make a nts frame of it
     data = np.genfromtxt(data_directory+'Mouse12-120806_PosHD.txt')
     mouse_position = nts.TsdFrame(d = data[:,[1,2,3]], t = data[:,0], time_units = 's')
     # But TsdFrame is a wrapper of pandas and you can change name of columns in pandas
@@ -116,11 +116,15 @@ def firetdisco(hd_spikes, neuro_num, epoch):
     #put that index in your df
     df_cn = df_comp.combine_first(df_n_grouped)
     df_cn.set_index(bins, inplace=True)
+    #fill with 0 for the na values
     df_cn.fillna(0, inplace=True)
-    spike_count = nts.Tsd(t = bins+(bin_size/2.), d = df_cn['counts'].values) #delete, just test
+    #generate a Tsd with the data
+    spike_count = nts.Tsd(t = bins+(bin_size/2.), d = df_cn['counts'].values) 
+    #change units to spikes per second = firing rate
     firing_rate = nts.Tsd(t = bins+(bin_size/2.), d = spike_count.values/(bin_size/1000./1000.))
-    return first_spike, last_spike, bin_size, bins, firing_rate, meanfiring
+    return first_spike, last_spike, bin_size, bins, firing_rate
 
+#Determine the mean firing rate for any epoch
 def meanfiring_f(hd_spikes, neuro_num, epoch):
     #select one neuron
     my_neuron = hd_spikes[neuro_num]
@@ -128,7 +132,9 @@ def meanfiring_f(hd_spikes, neuro_num, epoch):
     my_neuron = my_neuron.restrict(epoch)
     #change units to seconds
     my_neuron.as_units('s')
+    #count the number of spikes
     count = my_neuron.index.shape[0]
+    #calculate mean firing rate
     meanf = count/epoch.tot_length('s')
     return (meanf)
 
@@ -141,7 +147,8 @@ D. Tuning curve
 def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins, path2save):
     
     """ Firing rate """
-    first_spike, last_spike, bin_size, bins, firing_rate, meanfiring = firetdisco (hd_spikes, neuro_num, wake_ep)
+    #Calculate firing rate
+    first_spike, last_spike, bin_size, bins, firing_rate = firetdisco (hd_spikes, neuro_num, wake_ep)
     
     """ Angular direction """
     # Next step is to compute the average angular direction with the same time bin
@@ -252,7 +259,7 @@ def width_gaussian(nabins, array):
 D. Autocorrelation
 """
 
-def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins, path2save):        
+def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins, path2save, window = 7, stdv = 5.0):        
         
     # Let's take neuron 
     my_neuron = hd_spikes[neuro_num]
@@ -269,12 +276,14 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     
     #Smooth the data for an easier calculation of the width
     dfa = aucorr [0:int(nbins/2)]
-    dfa = pd.DataFrame(dfa).rolling(window = 7, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0)
+    dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
     dfb = np.flipud(aucorr [int(nbins/2)+1::])
-    dfb = pd.DataFrame(dfb).rolling(window = 7, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0)
+    dfb = pd.DataFrame(dfb).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
     array = np.append((dfa.values),0)
     arrayt = np.append(np.append((dfa.values),0), np.flipud(dfb.values))
-
+    #Make a Tsd
+    times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
+    ndf = nts.Tsd(t = times, d = arrayt)
     #calculating width
     dic = dict(zip(array, list(range(0,nbins+1)))) 
     lista=[]
@@ -296,7 +305,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     from matplotlib.pyplot import hlines as hlines
     plt.figure(figsize=(12,8))
     #plt.plot(aucorr) # Plot the raw version
-    plt.plot(arrayt) # Plot the smoothed version
+    plt.plot(aucorr) # Plot the smoothed version
     plt.title("Autocorrelogram")
     plt.xlabel("time")
     #middle horizontal line
@@ -306,7 +315,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     elif  path2save == 'b': autocorrelogram = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'autocorrelogram_' + str(neuro_num) + '_' + epochstr +'.pdf'
     plt.savefig(autocorrelogram)
     
-    return aucorr, width_auto
+    return ndf, width_auto
 
 #end
 
