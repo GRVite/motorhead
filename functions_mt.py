@@ -9,7 +9,7 @@ b) determine the position in the arena,
 c) compute and plot the tuning curve and
 d) the autocorrelation of one neuron
 (This code uses some functions and scripts from https://github.com/PeyracheLab/StarterPack)
-@author: Gilberto Rojas-Vite. Peyrache Lab.
+@author: Gilberto Rojas Vite. Peyrache Lab.
 
 """
 
@@ -271,7 +271,6 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     aucorr = crossCorr(mi_neurona.index, mi_neurona.index, binsize, nbins)
     aucorr [int(nbins/2)] = 0.0
     #aucorr = aucorr/1000/meanfiring #normalize by the meanfiring rate
-    
     
     #Smooth the data for an easier calculation of the width
     dfa = aucorr [0:int(nbins/2)]

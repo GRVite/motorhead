@@ -83,7 +83,22 @@ for c,num in zip(name_cols, range(1,len(df_tun_smooth.columns)+1)):
 plt.tight_layout()
 plt.savefig('./plots/' + 'tuning_polar_' + '.pdf')
 
-
+#Polar trick 
+"""IN CONSTRUCTION
+df_tuning.sort_values(axis=0, ascending=False)
+df_pol = df_tuning.append(df_tuning.)
+df_pol =df_pol.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0)
+#Define phase values
+phase = np.linspace(0, 2*np.pi, nabins)
+#add extra value for clossing the loop
+phase = np.append(phase, 0)
+fig = plt.figure(figsize=(24,18))
+for c,num in zip(name_cols, range(1,len(df_pol.columns)+1)):
+    ax = fig.add_subplot(raws, col, num, projection='polar')
+    ax.plot(phase, df_pol[c], color ='darkorange')
+    #ax.set_xlabel('radians')
+    ax.set_title(c)
+plt.tight_layout()"""
 """
 5. Compute widths
 """
