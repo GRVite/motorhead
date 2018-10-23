@@ -22,16 +22,31 @@ result = pd.DataFrame(index = aut.index, columns = aut.columns)
 eplist = ['wake', 'sws', 'rem']
 
 #Calculate the ratio
-for i in eplist: 
-    result.loc[i] = tun.values/aut.loc[i].values
+for ep in eplist: result[ep] = tun['width'].div(aut[ep])
 
-names  = [x[-2:] for x in aut.columns]
+#Sort values by wake epoch
+result = result.sort_values('wake')
 
-from pylab import *
+#plot results
+from matplotlib.pyplot import *
+fig = plt.figure()
+for i in eplist:
+    plot(result[i].values, marker='o', label=i)
+    xticks(range(len(aut.index)+1), [i[-2:] for i in  aut.index])
+    xlabel('neuron')
+    ylabel('speed (radians/s)')
+    legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    title(aut.index[0][0:-5])
+speed = './plots/' + 'speedftneedle'
+plt.savefig(speed, bbox_inches = 'tight')
+    
+    
+
+
+
 #Plot results
 for i in eplist: 
         errors = result.loc[i].std()
         result.loc[i].plot.bar(title = "Speed of the needle")
         xticks(np.arange(len(names)), names)
-        speed = './plots/' + 'barplot_speed' + i
-        plt.savefig(speed)
+

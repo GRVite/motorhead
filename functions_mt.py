@@ -8,7 +8,7 @@ a) load and accomodate your .mat data,
 b) determine the position in the arena,
 c) compute and plot the tuning curve and
 d) the autocorrelation of one neuron
-(From a to c, the code has been taken mainly from https://github.com/PeyracheLab/StarterPack/blob/master/python/functions.py)
+(This code uses some functions and scripts from https://github.com/PeyracheLab/StarterPack)
 @author: Gilberto Rojas-Vite. Peyrache Lab.
 
 """
@@ -202,7 +202,7 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     #Define phase values
     phase = np.linspace(0, 2*np.pi, nabins)
     
-    """ Plots """
+    """ Plots 
     from matplotlib.pyplot import hlines as hlines
     
     plt.figure(figsize = (8,6)) 
@@ -232,12 +232,11 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     plt.savefig(plot_polar)
     plt.show()
 
-    return (my_data, tuning_curve, angular_bins)
+    return (my_data, tuning_curve, angular_bins)"""
 
 
 #Function for Width calculation for the tuning curve
     
-
 #Tuning curve computation for plots with gaussian shape
 def width_gaussian(nabins, array):
     phase = np.linspace(0, 2*np.pi, nabins)
@@ -287,7 +286,6 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     #calculating width
     dic = dict(zip(array, list(range(0,nbins+1)))) 
     lista=[]
-    meanfiring = meanfiring
     half_mfr2max= ((array.max() - meanfiring)/2) +meanfiring
     print(half_mfr2max, array.max())
     for i in array:
@@ -305,7 +303,7 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     from matplotlib.pyplot import hlines as hlines
     plt.figure(figsize=(12,8))
     #plt.plot(aucorr) # Plot the raw version
-    plt.plot(aucorr) # Plot the smoothed version
+    plt.plot(arrayt) # Plot the smoothed version
     plt.title("Autocorrelogram")
     plt.xlabel("time")
     #middle horizontal line

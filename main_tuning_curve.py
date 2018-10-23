@@ -17,6 +17,7 @@ from functions_mt import *
 nabins = 60
 #number of columns for subplots
 col= 5
+
 """
 1. Load and accomodate data
 """
@@ -55,25 +56,41 @@ df_tun_smooth = df_tuning.rolling(window = 15, win_type='gaussian', center=True,
 
 #Determine the number of raws
 raws = int(np.ceil(len(df_tun_smooth.columns)/col))
-#mytry
 
 fig = plt.figure(figsize=(12,8))
-
 for c,num in zip(name_cols, range(1,len(df_tun_smooth.columns)+1)):
     ax = fig.add_subplot(raws,col,num)
     ax.plot(df_tun_smooth[c], color ='darkorange')
     #ax.set_xlabel('radians')
     ax.set_title(c)
-
 plt.tight_layout()
 plt.savefig('./plots/' + 'tuning_plot_' + '.pdf')
+
+
+#Polar plots
+#add extra row for clossing the loop
+df_tun_smooth = df_tun_smooth.append(df_tun_smooth.loc[0,:], ignore_index=True)
+#Define phase values
+phase = np.linspace(0, 2*np.pi, nabins)
+#add extra value for clossing the loop
+phase = np.append(phase, 0)
+fig = plt.figure(figsize=(24,18))
+for c,num in zip(name_cols, range(1,len(df_tun_smooth.columns)+1)):
+    ax = fig.add_subplot(raws, col, num, projection='polar')
+    ax.plot(phase, df_tun_smooth[c], color ='darkorange')
+    #ax.set_xlabel('radians')
+    ax.set_title(c)
+plt.tight_layout()
+plt.savefig('./plots/' + 'tuning_polar_' + '.pdf')
+
+
 """
 5. Compute widths
 """
-df_tun_widths = pd.DataFrame(index=[0], columns = name_cols)
+df_tun_widths = pd.DataFrame(index= name_cols, columns = ['width'])
 for i in name_cols:
     array = df_tun_smooth[i].values 
-    df_tun_widths[i].loc[0] = width_gaussian (60, array)
+    df_tun_widths.loc[i, 'width'] = width_gaussian (60, array)
 
 #Save data
 df_tuning.to_hdf('./data_output/df_tuning.hdf', 'tuning')
