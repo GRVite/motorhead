@@ -32,11 +32,11 @@ keys = list(map(str, index))
 name_id = list(map(lambda x: ID + '_n_' + x, keys))
 #Determine the real times for the bin size and number of bins selected
 times= np.arange(0, bin_size*(nb_bins+1), bin_size) - (nb_bins*bin_size)/2
-# Create a pd to store the autocorrelation data from your different epochs
-df = pd.DataFrame(index = times, columns = pd.MultiIndex.from_product([name_cols, eplist]))
 #make lists of epochs for the loops and the index of your pandas dataframe 
 eplist = ['wake', 'sws', 'rem']
 epochs = [wake_ep, sws_ep, rem_ep]
+# Create a pd to store the autocorrelation data from your different epochs
+df = pd.DataFrame(index = times, columns = pd.MultiIndex.from_product([name_id, eplist]))
 #Dataframe for storing widths
 df_widths = pd.DataFrame(index = name_id, columns = eplist)
 
@@ -45,15 +45,15 @@ df_widths = pd.DataFrame(index = name_id, columns = eplist)
 2. Compute results
 """
 for ep, epl in zip (epochs, eplist):   
-    for i, n in zip (index, name_ind):
+    for i, n in zip (index, name_id):
         #compute width
         meanfiring = meanfiring_f (hd_spikes, i, ep)
         #compute autocorrelation
-        aucor, width_auto = plotautco (hd_spikes, i, meanfiring, ep, epl, bin_size, numberofbins, 'a')
+        aucor, width_auto = plotautco (hd_spikes, i, meanfiring, ep, epl, bin_size, nb_bins, 'a')
         #store the values of the autocorrelation
         df[n, epl]= aucor
         #store the width
-df_widths[epl][n]= width_auto
+        df_widths[epl][n]= width_auto
 
 
 """
@@ -78,7 +78,5 @@ for i in eplist: a_subplots(i, name_id)
 4. Save data in .hdf format
 """
 
-df_wake.to_hdf('./data_output/df_autocorrelation_wake.hdf', 'df_autocorrelation_wake')
-df_sws.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation_sws')
-df_rem.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelatio_remn')
+df.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation')
 df_widths.to_hdf('./data_output/df_autocorrelation_widths.hdf', 'widhts_a')

@@ -144,7 +144,7 @@ D. Tuning curve
 """
 
 
-def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins, path2save):
+def tuneit(hd_spikes, wake_ep, mouse_position, neuro_num, nabins, path2save):
     
     """ Firing rate """
     #Calculate firing rate
@@ -202,7 +202,7 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     #Define phase values
     phase = np.linspace(0, 2*np.pi, nabins)
     
-    """ Plots 
+    """Plots"""
     from matplotlib.pyplot import hlines as hlines
     
     plt.figure(figsize = (8,6)) 
@@ -217,7 +217,6 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     elif  path2save == 'b': plot_curve = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'tuning_curve_' + str(neuro_num) + '.pdf'
     plt.savefig(plot_curve)
     plt.show()
-    tun_std=np.std(tuning_curve)
     
     # Polar plot
     plt.figure(figsize=(12,8))
@@ -232,7 +231,7 @@ def tuneit(data_directory, hd_spikes, wake_ep, mouse_position, neuro_num, nabins
     plt.savefig(plot_polar)
     plt.show()
 
-    return (my_data, tuning_curve, angular_bins)"""
+    return (my_data, tuning_curve)
 
 
 #Function for Width calculation for the tuning curve
