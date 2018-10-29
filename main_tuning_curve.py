@@ -49,15 +49,55 @@ for i, n in zip(indx, name_cols):
 #Interpolate in case of a nan value
 df_tuning = df_tuning.interpolate(method = 'from_derivatives')
 
+#branch 2
+df_tuning.loc[2*np.pi]=np.nan
+df_tuning.iloc[-1] = df_tuning.iloc[0]
+df_smooth = df_tuning.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1, closed ='both').mean(std = 5.0)
 
-array_ = np.flipud (df_tuning.values)
+#branch1
+df_tmp = df_tuning.iloc[::-1]
+df_tmp = df_tmp.drop(df_tmp.index.values[0], axis=0)
+frames = [df_tuning, df_tmp]
+df_tmp =pd.concat(frames) 
+df_tmp = df_tmp.drop(df_tmp.index.values[-1], axis=0)
+frames = [df_tmp, df_tuning]
+df_tmp =pd.concat(frames) 
+df_tmp=df_tmp.rolling(window = 15, win_type='bartlett', center=True, min_periods = 1).mean(std = 5.0)
+df_tmp=df_tmp.iloc[59:120]
+
+
+#flip values
+arrayf = np.flipud (df_tuning.values)
+#delete last value to not have a values repeated when you append it 
+array_=np.delete(arrayf,59, axis=0)
 array =  np.append(array_, df_tuning.values, axis=0)
+array_=np.delete(arrayf,0, axis=0)
 array =  np.append(array, array_, axis=0)
 df_tun_smooth=pd.DataFrame(data=array, columns=name_cols)
 #Smooth it
 df_tun_smooth = df_tun_smooth.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0) #We need to smooth the data to make the computation of the width easier
 df_tun_smooth=df_tun_smooth.iloc[60:120,:]
 df_tun_smooth.set_index(df_tuning.index)
+
+
+
+"""
+#Polar trick 
+"""
+df_tmp = df_smooth
+#Determine the number of raws of your plot
+raws = int(np.ceil(len(df_tmp.columns)/col))
+phase = df_tmp.index.values
+fig = plt.figure(figsize=(24,18))
+for c,num in zip(name_cols, range(1,len(df_tmp.columns)+1)):
+    ax = fig.add_subplot(raws, col, num, projection='polar')
+    ax.plot(phase, df_tmp[c], color ='darkorange')
+    #ax.set_xlabel('radians')
+    ax.set_title(c)
+plt.tight_layout()
+
+
+
 
 """
 4. Plot Results
@@ -92,22 +132,8 @@ for c,num in zip(name_cols, range(1,len(df_tun_smooth.columns)+1)):
 plt.tight_layout()
 plt.savefig('./plots/' + 'tuning_polar_' + '.pdf')
 
-#Polar trick 
-"""IN CONSTRUCTION
-df_tuning.sort_values(axis=0, ascending=False)
-df_pol = df_tuning.append(df_tuning.)
-df_pol =df_pol.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0)
-#Define phase values
-phase = np.linspace(0, 2*np.pi, nabins)
-#add extra value for clossing the loop
-phase = np.append(phase, 0)
-fig = plt.figure(figsize=(24,18))
-for c,num in zip(name_cols, range(1,len(df_pol.columns)+1)):
-    ax = fig.add_subplot(raws, col, num, projection='polar')
-    ax.plot(phase, df_pol[c], color ='darkorange')
-    #ax.set_xlabel('radians')
-    ax.set_title(c)
-plt.tight_layout()"""
+
+
 """
 5. Compute widths
 """
