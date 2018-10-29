@@ -34,21 +34,30 @@ mouse_position = det_pos (data_directory, 'orange', 'a')
 3. Compute the tuning curve for all the HD neurons
 """
 #Make a list of your neurons numbers
-index = list(hd_spikes.keys())
-keys = list(map(str, index))
+indx = list(hd_spikes.keys())
+keys = list(map(str, indx))
 name_cols = list(map(lambda x: ID + '_n_' + x, keys))
 
 #Create a dataframe with the information of the tuning curves of all the neurons
+abins = np.linspace(0, 2*np.pi, nabins+1)
 df_tuning = pd.DataFrame(columns = name_cols)
-for i, n in zip(index, name_cols):    
-    my_data, tuning_curve, abins = tuneit (data_directory, hd_spikes, wake_ep, mouse_position, i, nabins, 'a')
+for i, n in zip(indx, name_cols):    
+    print (i,n)
+    my_data, tuning_curve = tuneit (hd_spikes, wake_ep, mouse_position, i, nabins, 'a')
     df_tuning[n] = pd.Series(index = abins[0:-1], data = tuning_curve.flatten())
 
 #Interpolate in case of a nan value
 df_tuning = df_tuning.interpolate(method = 'from_derivatives')
 
+
+array_ = np.flipud (df_tuning.values)
+array =  np.append(array_, df_tuning.values, axis=0)
+array =  np.append(array, array_, axis=0)
+df_tun_smooth=pd.DataFrame(data=array, columns=name_cols)
 #Smooth it
-df_tun_smooth = df_tuning.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0) #We need to smooth the data to make the computation of the width easier
+df_tun_smooth = df_tun_smooth.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0) #We need to smooth the data to make the computation of the width easier
+df_tun_smooth=df_tun_smooth.iloc[60:120,:]
+df_tun_smooth.set_index(df_tuning.index)
 
 """
 4. Plot Results
