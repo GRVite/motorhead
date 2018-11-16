@@ -229,7 +229,8 @@ def tuneit (hd_spikes, ang, wake_ep, neuro_num, nbins):
     c, d = np.histogram(ang.values, phase)
     
     #tuning curve
-    tuning = pd.DataFrame (data = a/c, index = phase[0:-1])
+    tuning = pd.DataFrame (data = a/c/np.median(np.diff(ang.as_units('s').index)), index = phase[0:-1])
+
 
     return tuning
 
