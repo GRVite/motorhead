@@ -10,106 +10,76 @@ and it will save the data in a .hdf file located in ./data_output
 """
 import pandas as pd
 from functions_mt import *
+import numpy as np
+
 
 """
 0. Determine parameters
 """
-nabins = 60
+nbins = 60
 #number of columns for subplots
 col= 5
 
 """
 1. Load and accomodate data
 """
-ID= 'Mouse12-120806'
-data_directory = './data_read/'
-spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand (data_directory, ID)
-
-"""
-2. Determine the position in the arena
-"""
-mouse_position = det_pos (data_directory, 'orange', 'a')
-
-"""
-3. Compute the tuning curve for all the HD neurons
-"""
-#Make a list of your neurons numbers
-indx = list(hd_spikes.keys())
-keys = list(map(str, indx))
-name_cols = list(map(lambda x: ID + '_n_' + x, keys))
+#Select directory where you have all the folders of your animals data
+data_directory = './data_read_t/'
+#Select directory where you have all the .ang and .pos files of your animals data
+pos_dir = './data_read_t/positions'
+#Data handling for using this script
+main, dic = redata(data_directory, pos_dir)        
 
 #Create a dataframe with the information of the tuning curves of all the neurons
-abins = np.linspace(0, 2*np.pi, nabins+1)
-df_tuning = pd.DataFrame(columns = name_cols)
-for i, n in zip(indx, name_cols):    
-    print (i,n)
-    my_data, tuning_curve = tuneit (hd_spikes, wake_ep, mouse_position, i, nabins, 'a')
-    df_tuning[n] = pd.Series(index = abins[0:-1], data = tuning_curve.flatten())
+abins = np.linspace(0, 2*np.pi, nbins) #Rev Eliminar +1 
+df_tuning = pd.DataFrame(index = abins)
+  spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand ( './data_read_t/Mouse17/Mouse17-130129/', 'Mouse17-130129')     #del
 
-#Interpolate in case of a nan value
-df_tuning = df_tuning.interpolate(method = 'from_derivatives')
+for mouse in dic.keys():
+    for ID in dic[mouse]:
+        path = data_directory + main[mouse] + '/' + ID
+        print('the path is', path)
+        spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand (path, ID)
+        
+        """
+        3. Compute the tuning curve for all the HD neurons
+        """
+        #Make a list of your neurons numbers
+        indx = list(hd_spikes.keys())
+        print(indx)
+        keys = list(map(str, indx))
+        name_cols = list(map(lambda x: ID + '_n_' + x, keys))
+        # read angular data
+        ang = np.genfromtxt(path + '/' + ID + '_ang.txt')
+        # transform it to Tsd
+        ang = nts.TsdFrame(d = ang[:,1], t = ang[:,0], time_units = 's')
+        for i, n in zip(indx, name_cols):    
+            print (i,n)
+            tuning = tuneit (hd_spikes, ang, wake_ep, i, nbins)
+            df_tuning[n] = pd.Series(index = abins[0:-1], data = np.squeeze(tuning.values))
 
-#branch 2
-df_tuning.loc[2*np.pi]=np.nan
-df_tuning.iloc[-1] = df_tuning.iloc[0]
-df_smooth = df_tuning.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1, closed ='both').mean(std = 5.0)
+#Drop the extra raw generated in the code
+df_tuning.drop(index=df_tuning.index[-1], inplace = True)
 
-#branch1
-df_tmp = df_tuning.iloc[::-1]
-df_tmp = df_tmp.drop(df_tmp.index.values[0], axis=0)
-frames = [df_tuning, df_tmp]
-df_tmp =pd.concat(frames) 
-df_tmp = df_tmp.drop(df_tmp.index.values[-1], axis=0)
-frames = [df_tmp, df_tuning]
-df_tmp =pd.concat(frames) 
-df_tmp=df_tmp.rolling(window = 15, win_type='bartlett', center=True, min_periods = 1).mean(std = 5.0)
-df_tmp=df_tmp.iloc[59:120]
-
-
-#flip values
-arrayf = np.flipud (df_tuning.values)
-#delete last value to not have a values repeated when you append it 
-array_=np.delete(arrayf,59, axis=0)
-array =  np.append(array_, df_tuning.values, axis=0)
-array_=np.delete(arrayf,0, axis=0)
-array =  np.append(array, array_, axis=0)
-df_tun_smooth=pd.DataFrame(data=array, columns=name_cols)
-#Smooth it
-df_tun_smooth = df_tun_smooth.rolling(window = 15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0) #We need to smooth the data to make the computation of the width easier
-df_tun_smooth=df_tun_smooth.iloc[60:120,:]
-df_tun_smooth.set_index(df_tuning.index)
-
-
-
-"""
-#Polar trick 
-"""
-df_tmp = df_smooth
-#Determine the number of raws of your plot
-raws = int(np.ceil(len(df_tmp.columns)/col))
-phase = df_tmp.index.values
-fig = plt.figure(figsize=(24,18))
-for c,num in zip(name_cols, range(1,len(df_tmp.columns)+1)):
-    ax = fig.add_subplot(raws, col, num, projection='polar')
-    ax.plot(phase, df_tmp[c], color ='darkorange')
-    #ax.set_xlabel('radians')
-    ax.set_title(c)
-plt.tight_layout()
-
-
-
+#Sort values by columns
+df_tuning = df_tuning.sort_index(axis=1)
 
 """
 4. Plot Results
 """
+#smooth data to make easy to cumpute the width of the tuning curve
+df_smooth = df_tuning.rolling(window =15, win_type='gaussian', center=True, min_periods = 1).mean(std = 5.0)
 
 #Determine the number of raws
-raws = int(np.ceil(len(df_tun_smooth.columns)/col))
+raws = int(np.ceil(len(df_smooth.columns)/col))
 
-fig = plt.figure(figsize=(12,8))
-for c,num in zip(name_cols, range(1,len(df_tun_smooth.columns)+1)):
+#Get columns names
+name_cols = df_tuning.columns
+
+fig = plt.figure(figsize=(12,48))
+for c,num in zip(name_cols, range(1,len(df_smooth.columns)+1)):
     ax = fig.add_subplot(raws,col,num)
-    ax.plot(df_tun_smooth[c], color ='darkorange')
+    ax.plot(df_smooth[c], color ='darkorange')
     #ax.set_xlabel('radians')
     ax.set_title(c)
 plt.tight_layout()
@@ -117,16 +87,15 @@ plt.savefig('./plots/' + 'tuning_plot_' + '.pdf')
 
 
 #Polar plots
-#add extra row for clossing the loop
-df_tun_smooth = df_tun_smooth.append(df_tun_smooth.loc[0,:], ignore_index=True)
-#Define phase values
-phase = np.linspace(0, 2*np.pi, nabins)
-#add extra value for clossing the loop
-phase = np.append(phase, 0)
-fig = plt.figure(figsize=(24,18))
-for c,num in zip(name_cols, range(1,len(df_tun_smooth.columns)+1)):
+
+#smooth data, we change the parameters just for presentation since the smoothing does not allow to close the loop for polar plots. Consider that no measure is taken from polar plo
+df_polar = df_tuning.rolling(window = 5, win_type='bartlett', center=True, min_periods = 1).mean(std = 8.0)
+
+phase = df_polar.index.values
+fig = plt.figure(figsize=(18,36))
+for c,num in zip(name_cols, range(1,len(df_polar.columns)+1)):
     ax = fig.add_subplot(raws, col, num, projection='polar')
-    ax.plot(phase, df_tun_smooth[c], color ='darkorange')
+    ax.plot(phase, df_polar[c], color ='darkorange')
     #ax.set_xlabel('radians')
     ax.set_title(c)
 plt.tight_layout()
@@ -139,7 +108,7 @@ plt.savefig('./plots/' + 'tuning_polar_' + '.pdf')
 """
 df_tun_widths = pd.DataFrame(index= name_cols, columns = ['width'])
 for i in name_cols:
-    array = df_tun_smooth[i].values 
+    array = df_smooth[i].values 
     df_tun_widths.loc[i, 'width'] = width_gaussian (60, array)
 
 #Save data

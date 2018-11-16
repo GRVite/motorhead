@@ -29,7 +29,7 @@ result = result.sort_values('wake')
 
 #plot results
 from matplotlib.pyplot import *
-fig = figure()
+fig = figure(figsize=(10,8))
 for i in eplist:
     plot(result[i].values, marker='o', label=i)
     xticks(range(len(aut.index)+1), [i[-2:] for i in  aut.index])

@@ -1,3 +1,9 @@
+"""
+Script taken from https://github.com/PeyracheLab/StarterPack
+Author: Guillaume Viejo
+"""
+
+
 import numpy as np
 
 #########################################################
@@ -132,6 +138,72 @@ def loadSpikeData(path, index):
 	return spikes, shank
 
 def loadEpoch(path, epoch):
+    """
+        Help : to load this function \n
+        \t blabla \n
+    """
+    import scipy.io
+    import neuroseries as nts
+    sampling_freq = 1250    
+    behepochs = scipy.io.loadmat(path+'/BehavEpochs.mat')
+
+    if epoch == 'wake':
+        wake_ep = np.hstack([behepochs['wakeEp'][0][0][1],behepochs['wakeEp'][0][0][2]])
+        return nts.IntervalSet(wake_ep[:,0], wake_ep[:,1], time_units = 's').drop_short_intervals(0.0)
+
+    elif epoch == 'sleep':
+        sleep_pre_ep, sleep_post_ep = [], []
+        if 'sleepPreEp' in behepochs.keys():
+            sleep_pre_ep = behepochs['sleepPreEp'][0][0]
+            sleep_pre_ep = np.hstack([sleep_pre_ep[1],sleep_pre_ep[2]])
+            sleep_pre_ep_index = behepochs['sleepPreEpIx'][0]
+        if 'sleepPostEp' in behepochs.keys():
+            sleep_post_ep = behepochs['sleepPostEp'][0][0]
+            sleep_post_ep = np.hstack([sleep_post_ep[1],sleep_post_ep[2]])
+            sleep_post_ep_index = behepochs['sleepPostEpIx'][0]
+        if len(sleep_pre_ep) and len(sleep_post_ep):
+            sleep_ep = np.vstack((sleep_pre_ep, sleep_post_ep))
+        elif len(sleep_pre_ep):
+            sleep_ep = sleep_pre_ep
+        elif len(sleep_post_ep):
+            sleep_ep = sleep_post_ep                        
+        return nts.IntervalSet(sleep_ep[:,0], sleep_ep[:,1], time_units = 's')
+
+    elif epoch == 'sws':
+        import os
+        file1 = path.split("/")[-1]+'.sts.SWS'
+        file2 = path.split("/")[-1]+'-states.mat'
+        listdir = os.listdir(path)
+        if file1 in listdir:
+            sws = np.genfromtxt(path+'/'+file1)/float(sampling_freq)
+            return nts.IntervalSet.drop_short_intervals(nts.IntervalSet(sws[:,0], sws[:,1], time_units = 's'), 0.0)
+
+        elif file2 in listdir:
+            sws = scipy.io.loadmat(path+'/'+file2)['states'][0]
+            index = np.logical_or(sws == 2, sws == 3)*1.0
+            index = index[1:] - index[0:-1]
+            start = np.where(index == 1)[0]+1
+            stop = np.where(index == -1)[0]
+            return nts.IntervalSet.drop_short_intervals(nts.IntervalSet(start, stop, time_units = 's', expect_fix=True), 0.0)
+
+    elif epoch == 'rem':
+        import os
+        file1 = path.split("/")[-1]+'.sts.REM'
+        file2 = path.split("/")[-1]+'-states.mat'
+        listdir = os.listdir(path)    
+        if file1 in listdir:
+            rem = np.genfromtxt(path+'/'+file1)/float(sampling_freq)
+            return nts.IntervalSet(rem[:,0], rem[:,1], time_units = 's').drop_short_intervals(0.0)
+
+        elif file2 in listdir:
+            rem = scipy.io.loadmat(path+'/'+file2)['states'][0]
+            index = (rem == 5)*1.0
+            index = index[1:] - index[0:-1]
+            start = np.where(index == 1)[0]+1
+            stop = np.where(index == -1)[0]
+            return nts.IntervalSet(start, stop, time_units = 's', expect_fix=True).drop_short_intervals(0.0)
+"""
+def loadEpoch(path, epoch):
 	import scipy.io
 	import neuroseries as nts
 	import os,sys
@@ -191,7 +263,7 @@ def loadEpoch(path, epoch):
 				start = np.where(index == 1)[0]+1
 				stop = np.where(index == -1)[0]
 				return nts.IntervalSet(start, stop, time_units = 's', expect_fix=True).drop_short_intervals(0.0)
-
+"""
 def loadHDCellInfo(path, index):
 	import scipy.io
 	hd_info = scipy.io.loadmat(path)['hdCellStats'][:,-1]

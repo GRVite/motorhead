@@ -20,7 +20,6 @@ import os
 from functions import *
 import scipy.io
 import matplotlib.pyplot as plt
-data_directory = './data_read/'
 routea= './plots/'
 routeb= r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/'
 
@@ -32,13 +31,66 @@ routeb= r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projec
 """
 A. Load and accommodate data
 """
+
+def redata(data_directory, pos_dir):
+    import os
+    #Make a list of your animals
+    #Sometimes, you have a .DS_Store, and you do not want it in your list.
+    main = [i for i in os.listdir(data_directory) if i != '.DS_Store' and i != 'PositionFiles.tar' and i != 'positions']
+    main.sort()
+    
+    #Make a dict of all your sessions
+    dic = {}
+    for n, m in zip(range(len(main)), main):
+        dire = data_directory + m
+        dire = {i for i in os.listdir(dire) if i != '.DS_Store'}
+        dic [n] = dire
+    
+    #Move files one level up from Analysis folder
+    for i in dic.keys():
+        print(i)
+        for j in dic[i]:
+            path = data_directory + main[i] + '/' + j + '/'
+            print('the path is', path)
+            for file in os.listdir(path + '/Analysis'):
+                os.rename (path + '/Analysis/' + file, path + file) #let you move a file from one dir to another
+
+    #function for copying files from a folder called 'positions' with files of mouse positions and angles to the folders for each session
+    from shutil import copyfile 
+    for i in dic.keys():
+        print(i)
+        for j in dic[i]:
+            path = data_directory + main[i] + '/' + j + '/' + j
+            try: 
+                print('the path is', pos_dir + '/' + main[i] + '/' + j + '/' + j + '.pos.txt')
+                copyfile (pos_dir + '/' + main[i] + '/' + j + '/' + j + '.pos', path + '_pos.txt')
+                copyfile (pos_dir + '/' + main[i] + '/' + j + '/' + j + '.ang', path + '_ang.txt')
+            except FileNotFoundError: 
+                print("exemption for ", i)
+                pass
+    return main, dic
+
+def find_pos():
+    #Search ---run just if PosHd.txt is not in the files 
+    import os.path
+    miss = []   
+    pos_dir= './data_read_t/positions'   
+    for i in dic.keys():
+        print(i)
+        for j in dic[i]:
+            path = data_directory + main[i] + '/' + j + '/' + j
+            print('the path is', path)
+            if os.path.exists(path + '_PosHD.txt') == False: 
+                miss.append(j) 
+                os.rename(pos_dir + '/' + main[i] + '/' + j + '/' + j + '.pos.txt', path + '_PosHD.txt')
+                
 def data_hand(data_directory, ID):
     files 			= os.listdir(data_directory) 
-    generalinfo 	= scipy.io.loadmat(data_directory + ID + '_GeneralInfo.mat')
+    generalinfo 	= scipy.io.loadmat(data_directory + '/GeneralInfo.mat')
     shankStructure 	= loadShankStructure(generalinfo)
-    spikes,shank 	= loadSpikeData(data_directory +  ID + '_SpikeData.mat', shankStructure['thalamus'])
+    spikes,shank 	= loadSpikeData(data_directory + '/SpikeData.mat', shankStructure['thalamus'])
     my_thalamus_neuron_index = list(spikes.keys())
-    hd_neuron_index = loadHDCellInfo(data_directory+  ID + '_HDCells.mat', my_thalamus_neuron_index)
+    hd_neuron_index = loadHDCellInfo(data_directory + '/HDCells.mat', my_thalamus_neuron_index)
     hd_spikes = {}
     for neuron in hd_neuron_index:
         hd_spikes[neuron] = spikes[neuron]
@@ -46,17 +98,26 @@ def data_hand(data_directory, ID):
     sleep_ep 		= loadEpoch(data_directory, 'sleep')
     sws_ep 			= loadEpoch(data_directory, 'sws')
     rem_ep 			= loadEpoch(data_directory, 'rem')
+    print('todobien')
     sws_ep = sleep_ep.intersect(sws_ep)
-    rem_ep = sleep_ep.intersect(rem_ep)
+    try: 
+        rem_ep = sleep_ep.intersect(rem_ep); 
+    except TypeError: 
+        print("epoch exemption for ", ID)
+        pass
     return (spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep)
 
 
 """
 B. Position in the arena
 """
-def det_pos(data_directory, color, path2save):
+
+
+
+
+def det_pos(data_directory, ID, color, path2save):
     #load the angular value at each time steps and make a nts frame of it
-    data = np.genfromtxt(data_directory+'Mouse12-120806_PosHD.txt')
+    data = np.genfromtxt(data_directory + ID + '_PosHD.txt')
     mouse_position = nts.TsdFrame(d = data[:,[1,2,3]], t = data[:,0], time_units = 's')
     # But TsdFrame is a wrapper of pandas and you can change name of columns in pandas
     # So let's change the columns name
@@ -143,100 +204,36 @@ def meanfiring_f(hd_spikes, neuro_num, epoch):
 D. Tuning curve
 """
 
-
-def tuneit(hd_spikes, wake_ep, mouse_position, neuro_num, nabins, path2save):
     
-    """ Firing rate """
-    #Calculate firing rate
-    first_spike, last_spike, bin_size, bins, firing_rate = firetdisco (hd_spikes, neuro_num, wake_ep)
+#This function allows you to calculate the tuning curve for one neuron
+def tuneit (hd_spikes, ang, wake_ep, neuro_num, nbins):
+
+    # restrict to wake_ep
+    ang = ang.restrict(wake_ep)
     
-    """ Angular direction """
-    # Next step is to compute the average angular direction with the same time bin
-    # Steps are the same
-    head_direction = np.zeros(len(bins))
-    for i in range(len(bins)):	
-        start = i*bin_size + first_spike
-        end = start + bin_size
-        head_direction_in_interval = mouse_position['ang'].loc[start:end]
-        average_head_direction = np.mean(head_direction_in_interval)
-        head_direction[i] = average_head_direction
-
-    head_direction = nts.Tsd(t = np.arange(first_spike, last_spike, bin_size), d = head_direction, time_units = 'us')
-    head_direction = head_direction.as_units('s')
-    # we can put the two array together
-    my_data = np.vstack([firing_rate.values, head_direction.values]).transpose()
+    #load neuron information
+    my_neuron = hd_spikes[neuro_num]
+    # restrict to wake_ep
+    my_neuron = my_neuron.restrict(wake_ep)
     
-    # and put them in pandas
-    my_data = nts.TsdFrame(t = np.arange(first_spike, last_spike, bin_size), d = my_data)
-    # and give name to column
-    my_data.columns = ['firing', 'angle']
-    # Check you variable and observe the NaN value in the angle column
-    # We want to get rid of them so you can call the isnull() function of pandas
-    # Observe the False and True value
-    # We want the time position that is the inverse of False when calling isnull
-    # So you call the angle column
-    # And you invert the boolean with ~
-    # now we can downsample my_data with index that are only True in the previous line
-    my_data = my_data[~my_data.isnull()['angle'].values]
-    # Check your variable my_data to see that the NaN have disappeared
-    #Compute the mean_firing_rate
-    """This part gets rid of some neurons!!!!!!!!!!!"""
-        
-    """ Tuning curve computation """
-
-    tuning_curve = np.zeros(nabins)
-    # the tuning curve is the mean firing rate per angular bins
-    # First step is to define the angular bins
-    angular_bins = np.linspace(0, 2*np.pi, nabins+1)
-    #transform it to values
-    val = my_data['angle'].values
-
-    # Now we can loop
-    for i in range(nabins):
-        left_border = angular_bins[i]
-        right_border = angular_bins[i+1]
-        index = np.logical_and(val>left_border, val<=right_border)
-        tuning_curve[i] = np.mean(my_data[index]['firing'])
-
-
-    #Define phase values
-    phase = np.linspace(0, 2*np.pi, nabins)
+    #realign data
+    ang_spk = ang.realign(my_neuron)
     
-    """Plots"""
-    from matplotlib.pyplot import hlines as hlines
+    #define angular bins
+    phase = np.linspace(0, 2*np.pi, nbins)
     
-    plt.figure(figsize = (8,6)) 
-    plt.plot(phase, tuning_curve, color='darkorange')
-    hlines (tuning_curve.max()/2, phase.min(),  phase.max(), 'r')
-    #vlines (phase.max()/2, tuning_curve.min(),  tuning_curve.max(), 'r')    
-    plt.xlabel("Head-direction (rad)")
-    plt.ylabel("Firing rate")
-    plt.title("ADn neuron")
-    plt.grid()
-    if path2save == 'a': plot_curve = './plots/' + 'tuning_curve_' + str(neuro_num) + '.pdf'
-    elif  path2save == 'b': plot_curve = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'tuning_curve_' + str(neuro_num) + '.pdf'
-    plt.savefig(plot_curve)
-    plt.show()
+    #a = spike count, b = bins limits
+    a, b = np.histogram(ang_spk.values, phase)
     
-    # Polar plot
-    plt.figure(figsize=(12,8))
-    plt.subplot(111, projection='polar')
-    plt.plot(phase, tuning_curve, color = 'chocolate', markerfacecoloralt = 'darkorange')
-    plt.xlabel("Head-direction (rad)")
-    #plt.ylabel("Firing rate")
-    plt.title("ADn neuron")
-    plt.grid()
-    if path2save == 'a': plot_polar = './plots/' + 'tuning_polar_' + str(neuro_num) + '.pdf'
-    elif  path2save == 'b': plot_polar = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'tuning_polar_' + str(neuro_num) + '.pdf'
-    plt.savefig(plot_polar)
-    plt.show()
-
-    return (my_data, tuning_curve)
-
-
-#Function for Width calculation for the tuning curve
+    #c = angular count, d = bins limits
+    c, d = np.histogram(ang.values, phase)
     
-#Tuning curve computation for plots with gaussian shape
+    #tuning curve
+    tuning = pd.DataFrame (data = a/c, index = phase[0:-1])
+
+    return tuning
+
+#Function for width  computation for plots with gaussian shape
 def width_gaussian(nabins, array):
     phase = np.linspace(0, 2*np.pi, nabins)
     dic = dict(zip(array, list(range(0,len(array))))) 
@@ -253,12 +250,12 @@ def width_gaussian(nabins, array):
     print("the width is", width_auto)
     return  width_auto
 
+#This function calculate the tuning curve for all the neurons of one session
 """
 D. Autocorrelation
 """
 
-def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins, path2save, window = 7, stdv = 5.0):        
-        
+def corr_calc(hd_spikes, neuro_num, epoch, binsize, nbins):    
     # Let's take neuron 
     my_neuron = hd_spikes[neuro_num]
     # To speed up computation, we can restrict the time of spikes to epoch of wake
@@ -270,7 +267,9 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     aucorr = crossCorr(mi_neurona.index, mi_neurona.index, binsize, nbins)
     aucorr [int(nbins/2)] = 0.0
     #aucorr = aucorr/1000/meanfiring #normalize by the meanfiring rate
+    return aucorr
     
+def width_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0):
     #Smooth the data for an easier calculation of the width
     dfa = aucorr [0:int(nbins/2)]
     dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
@@ -294,9 +293,10 @@ def plotautco(hd_spikes, neuro_num, meanfiring, epoch, epochstr, binsize, nbins,
     index_max = dic[nums.max()]
     width_auto = (abs(index_max-index_min)) *2 +1 #get the distance in bins
     width_auto = width_auto*binsize/1000
-    print("for neuron {0} the width is".format(neuro_num), width_auto, ' s')
-       
-    
+    return width_auto    
+
+
+def aucorr_plot(data, nbins, path2save): 
     """Plot autocorrelogram"""
     from matplotlib.pyplot import hlines as hlines
     plt.figure(figsize=(12,8))

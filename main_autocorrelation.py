@@ -5,6 +5,8 @@ This script will help you to compute the autocorrelation of all the data
 from head direction cells of one animal, and it will save the data in a .hdf file 
 located in ./data_output 
 
+You are supposed to run main_tuninc_curve.py first, since this script takes data from it
+
 Created on Fri Oct  5 10:53:34 2018
 @author: grvite
 """
@@ -23,38 +25,58 @@ nb_bins = 100
 """
 1. Load and accomodate data
 """
-#Determine mouse ID
-ID= 'Mouse12-120806'
-spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand(data_directory, ID)
-#. Make a list of your neurons numbers
-index = list(hd_spikes.keys())
-keys = list(map(str, index))
-name_id = list(map(lambda x: ID + '_n_' + x, keys))
+#Select directory where you have all the folders of your animals data
+data_directory = './data_read_t/'
+#Make a list of your animals
+#Sometimes, you have a .DS_Store, and you do not want it in your list.
+main = [i for i in os.listdir(data_directory) if i != '.DS_Store']
+
+#Make a dict of all your sessions
+dic = {}
+for n, m in zip(range(len(main)), main):
+    dire = data_directory + m
+    dire = {i for i in os.listdir(dire) if i != '.DS_Store'}
+    dic [n] = dire
+
+#Move files one level up from Analysis folder
+for i in dic.keys():
+    print(i)
+    for j in dic[i]:
+        path = data_directory + main[i] + '/' + j + '/'
+        print('the path is', path)
+        for file in os.listdir(path + '/Analysis'):
+            os.rename (path + '/Analysis/' + file, path + file)
+
+#import codes of neurons from df_tuning.hdf file
+name_cols = pd.read_hdf('./data_output/df_tuning.hdf', 'tuning', start = 0, stop = 0).columns
+
 #Determine the real times for the bin size and number of bins selected
 times= np.arange(0, bin_size*(nb_bins+1), bin_size) - (nb_bins*bin_size)/2
 #make lists of epochs for the loops and the index of your pandas dataframe 
 eplist = ['wake', 'sws', 'rem']
-epochs = [wake_ep, sws_ep, rem_ep]
 # Create a pd to store the autocorrelation data from your different epochs
-df = pd.DataFrame(index = times, columns = pd.MultiIndex.from_product([name_id, eplist]))
+df = pd.DataFrame(index = times, columns = pd.MultiIndex.from_product([name_cols, eplist]))
 #Dataframe for storing widths
-df_widths = pd.DataFrame(index = name_id, columns = eplist)
+df_widths = pd.DataFrame(columns = eplist)
+df_var = pd.DataFrame(columns = eplist)
 
-
-"""
-2. Compute results
-"""
-for ep, epl in zip (epochs, eplist):   
-    for i, n in zip (index, name_id):
-        #compute width
-        meanfiring = meanfiring_f (hd_spikes, i, ep)
-        #compute autocorrelation
-        aucor, width_auto = plotautco (hd_spikes, i, meanfiring, ep, epl, bin_size, nb_bins, 'a')
-        #store the values of the autocorrelation
-        df[n, epl]= aucor
-        #store the width
-        df_widths[epl][n]= width_auto
-
+for mouse in dic.keys():
+    for ID in dic[mouse]:
+        path = data_directory + main[mouse] + '/' + ID 
+        print('the path is', path)
+        spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand (path, ID)
+        # Make a list of your neurons numbers
+        index = list(hd_spikes.keys())
+        epochs = [wake_ep, sws_ep, rem_ep]
+        for i in index:
+            for ep, epl in zip (epochs, eplist):  
+                #compute width
+                meanfiring = meanfiring_f (hd_spikes, i, ep)
+                corr = corr_calc(hd_spikes, i, ep, bin_size, nb_bins)
+                loci = ID + '_n_' + str(i)
+                df[loci, epl] = pd.Series(index = times, data = corr.flatten()) 
+                df_widths.loc [loci, epl] = width_corr (corr, nb_bins, bin_size, meanfiring, window = 7, stdv = 5.0)
+                df_var.loc [loci, epl] = np.var(corr)
 
 """
 3. Make plots
@@ -80,3 +102,4 @@ for i in eplist: a_subplots(i, name_id)
 
 df.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation')
 df_widths.to_hdf('./data_output/df_autocorrelation_widths.hdf', 'widhts_a')
+df_var.to_hdf('./data_output/df_autocorrelation_var.hdf', 'var_a')
