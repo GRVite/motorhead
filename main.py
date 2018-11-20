@@ -39,9 +39,6 @@ for i in eplist:
     title(aut.index[0][0:-5])
 speed = './plots/' + 'speedftneedle'
 plt.savefig(speed, bbox_inches = 'tight')
-    
-    
-
 
 
 #Plot results

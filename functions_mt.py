@@ -41,11 +41,29 @@ def redata(data_directory, pos_dir):
     
     #Make a dict of all your sessions
     dic = {}
-    for n, m in zip(range(len(main)), main):
+    sessions = []
+    for m in main:
         dire = data_directory + m
-        dire = {i for i in os.listdir(dire) if i != '.DS_Store'}
-        dic [n] = dire
+        dire = {i for i in os.listdir(dire) if i != '.DS_Store'}   
+        dic [m] = dire
+        for s in dic[m]:
+            sessions.append(s)
+    print(sessions)
     
+    #Make a dictionary with sessions as keys and neurons as values of the keys
+    neuronas={}
+    for mouse in list(dic.keys()): #mouse = 'Mouse12', 'Mouse17' and so on
+        for s in dic[mouse]: #s = session 
+            path = data_directory + mouse + '/' + s
+            spikes, shank, hd_spikes = data_hand (path, s)
+            neuronas[s] = list(hd_spikes.keys())[0]
+            lista=[]
+            for i in list(hd_spikes.keys()): #we iterate in the list that contains the number of neurons per session
+                lista.append(i)
+                neuronas[s] = lista
+    return main, dic, sessions, neuronas
+
+def files_managment():       
     #Move files one level up from Analysis folder
     for i in dic.keys():
         print(i)
@@ -68,7 +86,7 @@ def redata(data_directory, pos_dir):
             except FileNotFoundError: 
                 print("exemption for ", i)
                 pass
-    return main, dic
+    
 
 def find_pos():
     #Search ---run just if PosHd.txt is not in the files 
@@ -94,18 +112,7 @@ def data_hand(data_directory, ID):
     hd_spikes = {}
     for neuron in hd_neuron_index:
         hd_spikes[neuron] = spikes[neuron]
-    wake_ep 		= loadEpoch(data_directory, 'wake')
-    sleep_ep 		= loadEpoch(data_directory, 'sleep')
-    sws_ep 			= loadEpoch(data_directory, 'sws')
-    rem_ep 			= loadEpoch(data_directory, 'rem')
-    print('todobien')
-    sws_ep = sleep_ep.intersect(sws_ep)
-    try: 
-        rem_ep = sleep_ep.intersect(rem_ep); 
-    except TypeError: 
-        print("epoch exemption for ", ID)
-        pass
-    return (spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep)
+    return (spikes, shank, hd_spikes)
 
 
 """

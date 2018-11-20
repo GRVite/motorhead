@@ -169,11 +169,24 @@ def loadEpoch(path, epoch):
             sleep_ep = sleep_post_ep                        
         return nts.IntervalSet(sleep_ep[:,0], sleep_ep[:,1], time_units = 's')
 
+    elif epoch == 'sleep_pre':
+        sleep_pre_ep = behepochs['sleepPreEp'][0][0]
+        sleep_pre_ep = np.hstack([sleep_pre_ep[1],sleep_pre_ep[2]])
+        sleep_pre_ep_index = behepochs['sleepPreEpIx'][0]
+        return nts.IntervalSet(sleep_pre_ep[:,0], sleep_pre_ep[:,1], time_units = 's')
+                               
+    elif epoch == 'sleep_post':
+        sleep_post_ep = behepochs['sleepPostEp'][0][0]
+        sleep_post_ep = np.hstack([sleep_post_ep[1],sleep_post_ep[2]])
+        sleep_post_ep_index = behepochs['sleepPostEpIx'][0]
+        return nts.IntervalSet(sleep_post_ep[:,0], sleep_post_ep[:,1], time_units = 's')
+    
     elif epoch == 'sws':
         import os
         file1 = path.split("/")[-1]+'.sts.SWS'
         file2 = path.split("/")[-1]+'-states.mat'
         listdir = os.listdir(path)
+        
         if file1 in listdir:
             sws = np.genfromtxt(path+'/'+file1)/float(sampling_freq)
             return nts.IntervalSet.drop_short_intervals(nts.IntervalSet(sws[:,0], sws[:,1], time_units = 's'), 0.0)
@@ -186,22 +199,35 @@ def loadEpoch(path, epoch):
             stop = np.where(index == -1)[0]
             return nts.IntervalSet.drop_short_intervals(nts.IntervalSet(start, stop, time_units = 's', expect_fix=True), 0.0)
 
-    elif epoch == 'rem':
+    elif epoch == 'rem' or epoch == 'rem_pre' or epoch == 'rem_post':
         import os
-        file1 = path.split("/")[-1]+'.sts.REM'
-        file2 = path.split("/")[-1]+'-states.mat'
-        listdir = os.listdir(path)    
-        if file1 in listdir:
-            rem = np.genfromtxt(path+'/'+file1)/float(sampling_freq)
-            return nts.IntervalSet(rem[:,0], rem[:,1], time_units = 's').drop_short_intervals(0.0)
-
-        elif file2 in listdir:
-            rem = scipy.io.loadmat(path+'/'+file2)['states'][0]
+        listdir = os.listdir(path) 
+        if path.split("/")[-1]+'.sts.REM' in listdir:
+            rem = np.genfromtxt(path+'/'+path.split("/")[-1]+'.sts.REM')/float(sampling_freq)
+            rem = nts.IntervalSet(rem[:,0], rem[:,1], time_units = 's').drop_short_intervals(0.0)
+        elif path.split("/")[-1]+'-states.mat' in listdir:
+            file = path.split("/")[-1]+'-states.mat'
+            rem = scipy.io.loadmat(path+'/'+file)['states'][0]
             index = (rem == 5)*1.0
             index = index[1:] - index[0:-1]
             start = np.where(index == 1)[0]+1
             stop = np.where(index == -1)[0]
-            return nts.IntervalSet(start, stop, time_units = 's', expect_fix=True).drop_short_intervals(0.0)
+            rem = nts.IntervalSet(start, stop, time_units = 's', expect_fix=True).drop_short_intervals(0.0)
+
+        if epoch == 'rem':
+            return rem
+        elif epoch == 'rem_pre':
+            sleep_pre_ep = behepochs['sleepPreEp'][0][0]
+            sleep_pre_ep = np.hstack([sleep_pre_ep[1],sleep_pre_ep[2]])
+            sleep_pre_ep_index = behepochs['sleepPreEpIx'][0]
+            sleep_pre_ep = nts.IntervalSet(sleep_pre_ep[:,0], sleep_pre_ep[:,1], time_units = 's')
+            return rem.intersect(sleep_pre_ep)
+        else:
+            sleep_post_ep = behepochs['sleepPostEp'][0][0]
+            sleep_post_ep = np.hstack([sleep_post_ep[1],sleep_post_ep[2]])
+            sleep_post_ep_index = behepochs['sleepPostEpIx'][0]
+            sleep_post_ep = nts.IntervalSet(sleep_post_ep[:,0], sleep_post_ep[:,1], time_units = 's')
+            return rem.intersect(sleep_post_ep)
 """
 def loadEpoch(path, epoch):
 	import scipy.io

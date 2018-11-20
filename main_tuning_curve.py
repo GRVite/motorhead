@@ -31,15 +31,17 @@ pos_dir = './data_read_t/positions'
 main, dic = redata(data_directory, pos_dir)        
 
 #Create a dataframe with the information of the tuning curves of all the neurons
-abins = np.linspace(0, 2*np.pi, nbins) #Rev Eliminar +1 
-df_tuning = pd.DataFrame(index = abins)
-  spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand ( './data_read_t/Mouse17/Mouse17-130129/', 'Mouse17-130129')     #del
+abins = np.linspace(0, 2*np.pi, nbins)
+df_tuning = pd.DataFrame(index = abins[0:-1])
+
+#spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand ( './data_read_t/Mouse17/Mouse17-130129/', 'Mouse17-130129')     #del
 
 for mouse in dic.keys():
     for ID in dic[mouse]:
         path = data_directory + main[mouse] + '/' + ID
         print('the path is', path)
-        spikes, shank, hd_spikes, wake_ep, sws_ep, rem_ep = data_hand (path, ID)
+        spikes, shank, hd_spikes = data_hand (path, ID)
+        wake_ep = loadEpoch(path, 'wake')
         
         """
         3. Compute the tuning curve for all the HD neurons
@@ -56,10 +58,7 @@ for mouse in dic.keys():
         for i, n in zip(indx, name_cols):    
             print (i,n)
             tuning = tuneit (hd_spikes, ang, wake_ep, i, nbins)
-            df_tuning[n] = pd.Series(index = abins[0:-1], data = np.squeeze(tuning.values))
-
-#Drop the extra raw generated in the code
-df_tuning.drop(index=df_tuning.index[-1], inplace = True)
+            df_tuning[n] = pd.Series(index = abins[0:-1], data = np.squeeze(tuning.values))     
 
 #Sort values by columns
 df_tuning = df_tuning.sort_index(axis=1)
@@ -109,7 +108,7 @@ plt.savefig('./plots/' + 'tuning_polar_' + '.pdf')
 df_tun_widths = pd.DataFrame(index= name_cols, columns = ['width'])
 for i in name_cols:
     array = df_smooth[i].values 
-    df_tun_widths.loc[i, 'width'] = width_gaussian (60, array)
+    df_tun_widths.loc[i, 'width'] = width_gaussian (nbins, array)
 
 #Save data
 df_tuning.to_hdf('./data_output/df_tuning.hdf', 'tuning')
