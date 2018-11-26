@@ -32,7 +32,7 @@ routeb= r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projec
 A. Load and accommodate data
 """
 
-def redata(data_directory, pos_dir):
+def getcodes(data_directory):
     import os
     #Make a list of your animals
     #Sometimes, you have a .DS_Store, and you do not want it in your list.
@@ -48,7 +48,25 @@ def redata(data_directory, pos_dir):
         dic [m] = dire
         for s in dic[m]:
             sessions.append(s)
-    print(sessions)
+    return dic
+
+
+def gen_labels(data_directory):
+    import os
+    #Make a list of your animals
+    #Sometimes, you have a .DS_Store, and you do not want it in your list.
+    main = [i for i in os.listdir(data_directory) if i != '.DS_Store' and i != 'PositionFiles.tar' and i != 'positions']
+    main.sort()
+    
+    #Make a dict of all your sessions
+    dic = {}
+    sessions = []
+    for m in main:
+        dire = data_directory + m
+        dire = {i for i in os.listdir(dire) if i != '.DS_Store'}   
+        dic [m] = dire
+        for s in dic[m]:
+            sessions.append(s)
     
     #Make a dictionary with sessions as keys and neurons as values of the keys
     neuronas={}
@@ -61,14 +79,35 @@ def redata(data_directory, pos_dir):
             for i in list(hd_spikes.keys()): #we iterate in the list that contains the number of neurons per session
                 lista.append(i)
                 neuronas[s] = lista
-    return main, dic, sessions, neuronas
+                
+    #Make labels for animals, sessions and neurons
+    c0 = 0
+    c1 = 0
+    c2 = 0
+    labels_a = []
+    labels_s=[]
+    labels_n = []
+    neurons = []
+    for a in dic:
+        for s in dic[a]:
+            print(s)
+            for n in neuronas[s]:
+                neurons.append(s + '-' + str(n))
+                labels_n.append(c0)
+                labels_s.append(c1)
+                labels_a.append(c2)
+                c0+=1
+            c1+=1
+        c2+=1
+    return [labels_a,labels_s, labels_n]
 
-def files_managment():       
+def files_managment(dic, data_directory, pos_dir):
+    import os       
     #Move files one level up from Analysis folder
     for i in dic.keys():
         print(i)
         for j in dic[i]:
-            path = data_directory + main[i] + '/' + j + '/'
+            path = data_directory + i + '/' + j + '/'
             print('the path is', path)
             for file in os.listdir(path + '/Analysis'):
                 os.rename (path + '/Analysis/' + file, path + file) #let you move a file from one dir to another
@@ -78,11 +117,11 @@ def files_managment():
     for i in dic.keys():
         print(i)
         for j in dic[i]:
-            path = data_directory + main[i] + '/' + j + '/' + j
+            path = data_directory + i + '/' + j + '/' + j
             try: 
-                print('the path is', pos_dir + '/' + main[i] + '/' + j + '/' + j + '.pos.txt')
-                copyfile (pos_dir + '/' + main[i] + '/' + j + '/' + j + '.pos', path + '_pos.txt')
-                copyfile (pos_dir + '/' + main[i] + '/' + j + '/' + j + '.ang', path + '_ang.txt')
+                print('the path is', pos_dir + '/' + i + '/' + j + '/' + j + '.pos.txt')
+                copyfile (pos_dir + '/' + i + '/' + j + '/' + j + '.pos', path + '_pos.txt')
+                copyfile (pos_dir + '/' + i + '/' + j + '/' + j + '.ang', path + '_ang.txt')
             except FileNotFoundError: 
                 print("exemption for ", i)
                 pass
@@ -109,6 +148,8 @@ def data_hand(data_directory, ID):
     spikes,shank 	= loadSpikeData(data_directory + '/SpikeData.mat', shankStructure['thalamus'])
     my_thalamus_neuron_index = list(spikes.keys())
     hd_neuron_index = loadHDCellInfo(data_directory + '/HDCells.mat', my_thalamus_neuron_index)
+    if data_directory == './data_read_t/Mouse25/Mouse25-140130': 
+        print('hey', spikes.keys(), hd_neuron_index)
     hd_spikes = {}
     for neuron in hd_neuron_index:
         hd_spikes[neuron] = spikes[neuron]
@@ -118,9 +159,6 @@ def data_hand(data_directory, ID):
 """
 B. Position in the arena
 """
-
-
-
 
 def det_pos(data_directory, ID, color, path2save):
     #load the angular value at each time steps and make a nts frame of it
@@ -237,23 +275,32 @@ def tuneit (hd_spikes, ang, wake_ep, neuro_num, nbins):
     
     #tuning curve
     tuning = pd.DataFrame (data = a/c/np.median(np.diff(ang.as_units('s').index)), index = phase[0:-1])
-
-
+    
     return tuning
 
 #Function for width  computation for plots with gaussian shape
 def width_gaussian(nabins, array):
     phase = np.linspace(0, 2*np.pi, nabins)
-    dic = dict(zip(array, list(range(0,len(array))))) 
-    max_tmp = array.max()
-    pos_max = dic [max_tmp]
+    dic = dict(zip(array, list(range(len(array))))) 
+    max_a = array.max()
+    pos_max = dic [max_a]
+
+    x= int(len(array)/2)
+    half_x = list(dic.keys())[x]
+    
+    if pos_max > x: array = np.append (array[x:], array[:x])
+    else: array = np.append (array[x:], array)
+    
     lista=[]
     for i in array:
-        if i>=array.max()/2:
+        if i>=max_a/2:
             lista.append(i)
     nums = np.array(lista)
     lo = nums.min()
+    dic = dict(zip(array, list(range(len(array))))) 
     pos_min = dic[lo]
+    max_a = array.max()
+    pos_max = dic [max_a]
     width_auto = abs((pos_max-pos_min)*((2*np.pi)/(len(phase)-1)))*2
     print("the width is", width_auto)
     return  width_auto
@@ -270,14 +317,13 @@ def corr_calc(hd_spikes, neuro_num, epoch, binsize, nbins):
     my_neuron = my_neuron.restrict(epoch)
     #change units to ms
     mi_neurona = my_neuron.as_units('ms') 
-    
     #compute autcorrelation
     aucorr = crossCorr(mi_neurona.index, mi_neurona.index, binsize, nbins)
     aucorr [int(nbins/2)] = 0.0
     #aucorr = aucorr/1000/meanfiring #normalize by the meanfiring rate
     return aucorr
-    
-def width_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0):
+"""   
+def width_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0, plot):
     #Smooth the data for an easier calculation of the width
     dfa = aucorr [0:int(nbins/2)]
     dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
@@ -287,12 +333,13 @@ def width_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0):
     arrayt = np.append(np.append((dfa.values),0), np.flipud(dfb.values))
     #Make a Tsd
     times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
-    ndf = nts.Tsd(t = times, d = arrayt)
+    ndf = nts.Tsd(t = times, d = arrayt/meanfiring)
+    if plot = True: ndf.plot()
     #calculating width
     dic = dict(zip(array, list(range(0,nbins+1)))) 
     lista=[]
-    half_mfr2max= ((array.max() - meanfiring)/2) +meanfiring
-    print(half_mfr2max, array.max())
+    #half_mfr2max= ((array.max() - meanfiring)/2) + meanfiring
+    
     for i in array:
         if i>=half_mfr2max:
             lista.append(i)
@@ -303,23 +350,82 @@ def width_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0):
     width_auto = width_auto*binsize/1000
     return width_auto    
 
+def width_corr2(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0, plot):
+    #Smooth the data for an easier calculation of the width
+    dfa = aucorr [0:int(nbins/2)]
+    dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
+    dfb = np.flipud(aucorr [int(nbins/2)+1::])
+    dfb = pd.DataFrame(dfb).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
+    array = np.append((dfa.values),0)
+    arrayt = np.append(np.append((dfa.values),0), np.flipud(dfb.values))
+    #Make a Tsd
+    times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
+    ndf = nts.Tsd(t = times, d = arrayt/meanfiring)
+    
+    if plot = True: ndf.plot()
+    
+    array = array/meanfiring  
+    #calculating width
+    dic = dict(zip(array, list(range(0,nbins+1)))) 
+    lista=[]
+    half= array.max()/2
+    for i in array:
+        if i>=half:
+            lista.append(i)
+    nums = np.array(lista)
+    index_min = dic[nums.min()]
+    index_max = dic[nums.max()]
+    width_auto = (abs(index_max-index_min)) *2 +1 #get the distance in bins
+    width_auto = width_auto*binsize/1000
+    return width_auto  
+"""
+def smooth_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0, plot = False):
+    aucorr= aucorr-meanfiring
+    dfa = aucorr [0:int(nbins/2)]
+    dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
+    dfb = np.flipud(aucorr [int(nbins/2)+1::])
+    dfb = pd.DataFrame(dfb).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
+    #array = np.append((dfa.values),0)
+    arrayt = np.append(np.append((dfa.values),0), np.flipud(dfb.values))
+    if plot == True: 
+        #Make a Tsd
+        times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
+        ndf = nts.Tsd(t = times, d = arrayt/meanfiring)
+        ndf.plot()
+    return arrayt
+    
+def calc_width(array, nbins, binsize):
+    array = array[:int(nbins/2)]
+    #calculating width
+    dic = dict(zip(array, list(range(0,nbins+1)))) 
+    lista=[]
+    half= array.max()/2
+    for i in array:
+        if i>=half:
+            lista.append(i)
+    nums = np.array(lista)
+    index_min = dic[nums.min()]
+    index_max = dic[nums.max()]
+    width_auto = (abs(index_max-index_min)) *2 +1 #get the distance in bins
+    width_auto = width_auto*binsize/1000
+    return width_auto  
 
-def aucorr_plot(data, nbins, path2save): 
+def aucorr_plot(data, nbins, binsize, epochstr, path2save): 
     """Plot autocorrelogram"""
     from matplotlib.pyplot import hlines as hlines
     plt.figure(figsize=(12,8))
     #plt.plot(aucorr) # Plot the raw version
-    plt.plot(arrayt) # Plot the smoothed version
+    times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
+    data = nts.Tsd(t = times, d = data, time_units = 'ms')
+    plt.plot(data.as_units('ms')) # Plot the smoothed version
     plt.title("Autocorrelogram")
-    plt.xlabel("time")
+    plt.xlabel("time (ms)")
     #middle horizontal line
-    hlines (meanfiring, 0,  nbins, 'g', label = 'mean firing rate')
-    hlines (half_mfr2max, 0,  nbins, 'r', label = 'half point')
+    #hlines (meanfiring, 0,  nbins, 'g', label = 'mean firing rate')
+    hlines (data.max()/2, 0-nbins*binsize/2,  nbins*binsize/2, 'r', label = 'half point')
     if path2save == 'a': autocorrelogram = './plots/' + 'autocorrelogram_' + str(neuro_num) + '_' + epochstr + '.pdf'
     elif  path2save == 'b': autocorrelogram = r'cd /home/grvite/Dropbox (Peyrache Lab)/Peyrache Lab Team Folder/Projects/DreamSpeed - Gilberto/figs/' + 'autocorrelogram_' + str(neuro_num) + '_' + epochstr +'.pdf'
     plt.savefig(autocorrelogram)
-    
-    return ndf, width_auto
 
 #end
 
