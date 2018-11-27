@@ -23,10 +23,16 @@ from functions_mt import *
 # Determine the bin size and the number of bins for the autocorrelation
 bin_size = 20
 nb_bins = 200
-# Select directory where you have all the folders of your animals data
-data_directory = './data_read_t/'
+
 # Select directory where you have all the .ang and .pos files of your animals data
 pos_dir = './data_read_t/positions'
+
+#Select directory where you have all the folders of your animals data
+data_directory = '../data_read_t/'
+# Define output directory for the plots
+output = '../plots'
+# Define directory to save the .hdf data
+hdf_dir = '../data_output'
 
 """
 1. Load and accomodate data
@@ -43,6 +49,10 @@ times= np.arange(0, bin_size*(nb_bins+1), bin_size) - (nb_bins*bin_size)/2
 
 # Make lists of epochs for the loops and the index of your pandas dataframe 
 eplist = ['wake', 'sws', 'rem', 'rem_pre', 'rem_post']
+
+"""
+2. Compute autocorrelation
+"""
 
 # Create a dataframe to store the autocorrelation data from your different epochs
 df = pd.DataFrame(index = times, columns = pd.MultiIndex.from_product([neurons, eplist]))
@@ -81,7 +91,9 @@ for mouse in dic.keys():
                 #smooth data and store it
                 df_smooth[session + '-' + str(neuron), epl] = pd.Series(index = times, data = smooth.flatten())
 
-
+"""
+3. Calculate widths
+"""
 # Create a dataframe for storing the widths              
 df_widths = pd.DataFrame(index= neurons, columns = eplist)
 for n in neurons:
@@ -90,12 +102,9 @@ for n in neurons:
         print(width)
         df_widths.loc [n, i] = width
         
-   #compute width
-                df_widths.loc [(mouse, session, session + '-' + str(neuron)), epl] = width_corr (corr, nb_bins, bin_size, meanfiring)
-
            
 """
-3. Make plots
+4. Make plots
 """
 from matplotlib.pyplot import hlines as hlines
 def a_subplots(epoch, name_id, col= 5):
@@ -107,15 +116,15 @@ def a_subplots(epoch, name_id, col= 5):
         ax.plot(df[i, epoch], color ='brown')
         ax.set_title(i)
     plt.tight_layout()
-    plt.savefig('./plots/' + 'autocorrelogram_plot_' + epoch + '.pdf')
+    plt.savefig(ouput + 'autocorrelogram_plot_' + epoch + '.pdf')
     plt.show()
 
 for i in eplist: a_subplots(i, name_id)
 
 """
-4. Save data in .hdf format
+5. Save data in .hdf format
 """
-df.to_hdf('./data_output/df_autocorrelation.hdf', 'df_autocorrelation')
-df_smooth.to_hdf('./data_output/df_smooth_autocorrelation.hdf', 'df_smooth_autocorrelation')
-df_widths.to_hdf('./data_output/df_autocorrelation_widths.hdf', 'widhts_a')
-df_var.to_hdf('./data_output/df_autocorrelation_var.hdf', 'var_a')
+df.to_hdf(hdf_dir + '/df_autocorrelation.hdf', 'df_autocorrelation')
+df_smooth.to_hdf(hdf_dir + '/df_smooth_autocorrelation.hdf', 'df_smooth_autocorrelation')
+df_widths.to_hdf(hdf_dir + '/df_autocorrelation_widths.hdf', 'widhts_a')
+df_var.to_hdf(hdf_dir + '/df_autocorrelation_var.hdf', 'var_a')

@@ -13,14 +13,26 @@ import pandas as pd
 import numpy as np
 from functions_mt import *
 
-#Select directory where you have all the folders of your animals data
-data_directory = './data_read_t/'
+
+# Define directory where you have all the folders of your animals data
+data_directory = './data_read_t'
+
+# Define directory where are the .hdf derived from the computation of the tuning curve and the autocorrelation
+dir_read = '../data_output'
+
+# Define output directory
+output = '../plots'
+
+
+"""
+1. Read Data
+"""
 
 #get codes of animals and sesssions
 dic = getcodes(data_directory)
 
 #Read widths of the tuning curves
-tun = pd.read_hdf('./data_output/df_tuning_widths.hdf')
+tun = pd.read_hdf(dir_read + '/df_tuning_widths.hdf')
 lista = []
 for i in tun.index.values:
     lista.append(((i.split('-')[0], i.split('-')[1], i.split('-')[2])))
@@ -28,8 +40,13 @@ index = pd.MultiIndex.from_tuples(lista, names=['animal', 'session', 'neuron'])
 tun.set_index(index, inplace = True)
 
 #Read widths of the autocorrelograms
-aut = pd.read_hdf('./data_output/df_autocorrelation_widths.hdf')
+aut = pd.read_hdf(dir_read + '/df_autocorrelation_widths.hdf')
 aut.set_index(index, inplace = True)
+
+
+"""
+2. Calculation of the speed of the needle
+"""
 
 #Create dataframe to store the ratio data
 ratio = pd.DataFrame(index = index, columns = aut.columns)
@@ -38,17 +55,21 @@ eplist = eplist = ['wake', 'sws', 'rem', 'rem_pre', 'rem_post']
 #Calculate the ratio
 for ep in eplist: ratio[ep] = tun['width'].div(aut[ep])
 
-#Sort values by wake epoch 
-ratio = ratio.sort_values('wake')
 
 """
-    General
+3. Plots
 """
 from matplotlib.pyplot import *
 
-#Sort values by wake epoch result = result.sort_values('wake')
+#Sort values by wake epoch just for visualization
+ratio = ratio.sort_values('wake')
 
-# Plot general results
+
+"""
+3.1 Plot general results
+"""
+
+#select epochs
 eplist = ['wake', 'sws', 'rem']
 
 fig = figure(figsize=(14,10))
@@ -58,13 +79,10 @@ for i in eplist:
     xlabel('neuron')
     ylabel('speed (radians/s)')
     legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    title('Speed of the needle')
-dir2s = './plots/' + 'speedftneedle' + 'general'
+dir2s = output + '/speedftneedle' + 'general'
 plt.savefig(dir2s, bbox_inches = 'tight')
 
 # Plot results per animal
-#select epochs
-eplist = ['wake', 'sws', 'rem']
 for ID in dic:
     fig = figure(figsize=(14,10))
     for i in eplist:
@@ -73,12 +91,11 @@ for ID in dic:
         xlabel('neuron')
         ylabel('speed (radians/s)')
         legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-        title('Speed of the needle')
-    dir2s = './plots/' + 'speedftneedle' + 'general' + ID
+    dir2s = output + '/speedftneedle' + 'general' + ID
     plt.savefig(dir2s, bbox_inches = 'tight')
 
 """
-    REM and nREM vs Wake
+3.2 REM and nREM vs Wake
 """
 eplist = ['rem_pre', 'wake', 'rem_post']
 
@@ -91,24 +108,31 @@ for ID in dic:
         xlabel('neuron')
         ylabel('speed (radians/s)')
         legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-        title('Speed of the needle')
-    dir2s = './plots/' + 'speedftneedle' + 'REMvsWAKE' + ID
+    dir2s = output + '/speedftneedle' + 'REMvsWAKE' + ID
     plt.savefig(dir2s, bbox_inches = 'tight')
 
-#barplot
+"""
+3.3. Barplots
+"""
 
 #Mean per group
 data = ratio.groupby(level=[['animal']]).sum()/ratio.groupby(level=['animal']).count()
+
 #General
-data.plot.bar()
+fig = data[['wake', 'sws','rem']].plot.bar(figsize=(12,8))
+fig.set_ylabel("Speed (rad/s)"); 
+plt.savefig(output + '/bar_general', bbox_inches = 'tight')
 #Bar plot 'wake' vs 'rem'
-data[['wake', 'rem']].plot.bar()
-#BAr plot rempre vs rempost
-data[['rem_pre', 'rem_post']].plot.bar()
+fig = data[['wake', 'rem']].plot.bar(figsize=(12,8))
+fig.set_ylabel("Speed (rad/s)"); 
+plt.savefig(output + '/rem_vs_wake', bbox_inches = 'tight')
+#Bar plot rempre vs rempost
+fig = data[['rem_pre', 'rem_post']].plot.bar(figsize=(12,8))
+fig.set_ylabel("Speed (rad/s)"); 
+plt.savefig(output + '/bar_rpre_vs_rempost', bbox_inches = 'tight')
 
-eplist = ['wake', 'rem']
 
-fig = figure(figsize=(14,10))'
+fig = figure(figsize=(14,10))
 for ID in dic:
     for i in eplist:
         bar(ratio[i].mean, label=i)
@@ -117,7 +141,7 @@ for ID in dic:
         ylabel('speed (radians/s)')
         legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
         title('Speed of the needle')
-dir2s = './plots/' + 'speedftneedle' + 'general'
+dir2s = output + '/speedftneedle' + 'general'
 plt.savefig(dir2s, bbox_inches = 'tight')
 
 #Plot results
@@ -126,3 +150,11 @@ for i in eplist:
         result.loc[i].plot.bar(title = "Speed of the needle")
         xticks(np.arange(len(names)), names)
 
+a=complexity
+a.plot()
+del a['Type']
+mu, sigma = "This", 15
+plt.figure(figsize=(8,8)); plt.axhline(0, color='green'); plt.ylim([0,1]), plt.ylabel("complexity value"),
+plt.text(1, 0.5, r'$\mu=100,\ \sigma=15$'), plt.title('Level of complexity'); 
+parallel_coordinates(a.iloc[0:5][['Right Nerve', 'Left Nerve',  'Chiasm',  'ID']], "ID", color=['y', 'b', 'm', 'y', 'm'])
+parallel_coordinates(a.iloc[6:11][['Right Nerve', 'Left Nerve', 'Chiasm', 'ID']], "ID", color=['#556270', '556271', '556272', '556273', '556271'])
