@@ -15,7 +15,7 @@ from functions_mt import *
 
 
 # Define directory where you have all the folders of your animals data
-data_directory = './data_read_t'
+data_directory = '../data_read_t/'
 
 # Define directory where are the .hdf derived from the computation of the tuning curve and the autocorrelation
 dir_read = '../data_output'
@@ -117,9 +117,11 @@ for ID in dic:
 
 #Mean per group
 data = ratio.groupby(level=[['animal']]).sum()/ratio.groupby(level=['animal']).count()
-
+yerr = ratio.loc['Mouse12'].sem()
+lista = 
+[i for i in ID in dic ratio.loc['Mouse12'].sem()]
 #General
-fig = data[['wake', 'sws','rem']].plot.bar(figsize=(12,8))
+fig = data[['wake', 'rem', 'sws']].plot.bar(figsize=(12,8))
 fig.set_ylabel("Speed (rad/s)"); 
 plt.savefig(output + '/bar_general', bbox_inches = 'tight')
 #Bar plot 'wake' vs 'rem'

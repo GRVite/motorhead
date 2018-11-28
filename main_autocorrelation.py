@@ -42,7 +42,7 @@ hdf_dir = '../data_output'
 dic = getcodes (data_directory)
 
 #import codes of neurons from df_tuning.hdf file
-neurons = pd.read_hdf('./data_output/df_tuning.hdf', 'tuning', start = 0, stop = 0).columns
+neurons = pd.read_hdf(hdf_dir + '/df_tuning.hdf', 'tuning', start = 0, stop = 0).columns
 
 #Determine the real times for the bin size and number of bins selected
 times= np.arange(0, bin_size*(nb_bins+1), bin_size) - (nb_bins*bin_size)/2
@@ -98,8 +98,8 @@ for mouse in dic.keys():
 df_widths = pd.DataFrame(index= neurons, columns = eplist)
 for n in neurons:
     for i in eplist: 
-        width = calc_width (df_smooth[n, i], nbins, binsize)
-        print(width)
+        width = calc_width (df_smooth[n, i], nb_bins, binsize)
+        print(n)
         df_widths.loc [n, i] = width
         
            

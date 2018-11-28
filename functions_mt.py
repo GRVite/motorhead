@@ -146,12 +146,12 @@ def data_hand(data_directory, ID):
     generalinfo 	= scipy.io.loadmat(data_directory + '/GeneralInfo.mat')
     shankStructure 	= loadShankStructure(generalinfo)
     spikes,shank 	= loadSpikeData(data_directory + '/SpikeData.mat', shankStructure['thalamus'])
-    my_thalamus_neuron_index = list(spikes.keys())
+    my_thalamus_neuron_index = np.array(list(spikes.keys()))
     hd_neuron_index = loadHDCellInfo(data_directory + '/HDCells.mat', my_thalamus_neuron_index)
     if data_directory == './data_read_t/Mouse25/Mouse25-140130': 
         print('hey', spikes.keys(), hd_neuron_index)
     hd_spikes = {}
-    for neuron in hd_neuron_index:
+    for neuron in my_thalamus_neuron_index[hd_neuron_index]:
         hd_spikes[neuron] = spikes[neuron]
     return (spikes, shank, hd_spikes)
 
@@ -284,9 +284,8 @@ def width_gaussian(nabins, array):
     dic = dict(zip(array, list(range(len(array))))) 
     max_a = array.max()
     pos_max = dic [max_a]
-
-    x= int(len(array)/2)
-    half_x = list(dic.keys())[x]
+    #find the position in the array of the middle point 
+    x = int(len(array)/2)
     
     if pos_max > x: array = np.append (array[x:], array[:x])
     else: array = np.append (array[x:], array)
