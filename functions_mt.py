@@ -278,31 +278,35 @@ def tuneit (hd_spikes, ang, wake_ep, neuro_num, nbins):
     
     return tuning
 
-#Function for width  computation for plots with gaussian shape
-def width_gaussian(nabins, array):
+def width_tun(nabins, array, pc = 0.1775):
     phase = np.linspace(0, 2*np.pi, nabins)
-    dic = dict(zip(array, list(range(len(array))))) 
+    dic = dict(zip(array, phase))
     max_a = array.max()
     pos_max = dic [max_a]
+    lim_high = 2*np.pi - pc*2*np.pi
+    lim_low = pc*2*np.pi
     #find the position in the array of the middle point 
-    x = int(len(array)/2)
+    x = int(nabins/2)
     
-    if pos_max > x: array = np.append (array[x:], array[:x])
-    else: array = np.append (array[x:], array)
-    
+    if pos_max < lim_low or pos_max > lim_high: 
+        array = np.append (array[x:], array[:x])
+
     lista=[]
     for i in array:
         if i>=max_a/2:
             lista.append(i)
     nums = np.array(lista)
+
+    phase = np.linspace(0, 2*np.pi, nabins)
+    dic = dict(zip(array, phase))
     lo = nums.min()
-    dic = dict(zip(array, list(range(len(array))))) 
-    pos_min = dic[lo]
-    max_a = array.max()
     pos_max = dic [max_a]
-    width_auto = abs((pos_max-pos_min)*((2*np.pi)/(len(phase)-1)))*2
+    pos_min = dic[lo]
+
+    width_auto = abs(pos_max-pos_min)*2
     print("the width is", width_auto)
     return  width_auto
+
 
 #This function calculate the tuning curve for all the neurons of one session
 """
@@ -321,63 +325,7 @@ def corr_calc(hd_spikes, neuro_num, epoch, binsize, nbins):
     aucorr [int(nbins/2)] = 0.0
     #aucorr = aucorr/1000/meanfiring #normalize by the meanfiring rate
     return aucorr
-"""   
-def width_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0, plot):
-    #Smooth the data for an easier calculation of the width
-    dfa = aucorr [0:int(nbins/2)]
-    dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
-    dfb = np.flipud(aucorr [int(nbins/2)+1::])
-    dfb = pd.DataFrame(dfb).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
-    array = np.append((dfa.values),0)
-    arrayt = np.append(np.append((dfa.values),0), np.flipud(dfb.values))
-    #Make a Tsd
-    times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
-    ndf = nts.Tsd(t = times, d = arrayt/meanfiring)
-    if plot = True: ndf.plot()
-    #calculating width
-    dic = dict(zip(array, list(range(0,nbins+1)))) 
-    lista=[]
-    #half_mfr2max= ((array.max() - meanfiring)/2) + meanfiring
-    
-    for i in array:
-        if i>=half_mfr2max:
-            lista.append(i)
-    nums = np.array(lista)
-    index_min = dic[nums.min()]
-    index_max = dic[nums.max()]
-    width_auto = (abs(index_max-index_min)) *2 +1 #get the distance in bins
-    width_auto = width_auto*binsize/1000
-    return width_auto    
 
-def width_corr2(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0, plot):
-    #Smooth the data for an easier calculation of the width
-    dfa = aucorr [0:int(nbins/2)]
-    dfa = pd.DataFrame(dfa).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
-    dfb = np.flipud(aucorr [int(nbins/2)+1::])
-    dfb = pd.DataFrame(dfb).rolling(window = window, win_type='gaussian', center=True, min_periods = 1).mean(std = stdv)
-    array = np.append((dfa.values),0)
-    arrayt = np.append(np.append((dfa.values),0), np.flipud(dfb.values))
-    #Make a Tsd
-    times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
-    ndf = nts.Tsd(t = times, d = arrayt/meanfiring)
-    
-    if plot = True: ndf.plot()
-    
-    array = array/meanfiring  
-    #calculating width
-    dic = dict(zip(array, list(range(0,nbins+1)))) 
-    lista=[]
-    half= array.max()/2
-    for i in array:
-        if i>=half:
-            lista.append(i)
-    nums = np.array(lista)
-    index_min = dic[nums.min()]
-    index_max = dic[nums.max()]
-    width_auto = (abs(index_max-index_min)) *2 +1 #get the distance in bins
-    width_auto = width_auto*binsize/1000
-    return width_auto  
-"""
 def smooth_corr(aucorr, nbins, binsize, meanfiring, window = 7, stdv = 5.0, plot = False):
     aucorr= aucorr-meanfiring
     dfa = aucorr [0:int(nbins/2)]

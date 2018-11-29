@@ -84,7 +84,7 @@ df_tun_widths = pd.DataFrame(index= name_cols, columns = ['width'])
 for i in name_cols:
     print(i)
     array = df_smooth[i].values 
-    df_tun_widths.loc[i, 'width'] = width_gaussian (nbins, array)
+    df_tun_widths.loc[i, 'width'] = width_tun (nbins, array)
     
 """
 4. Plot Results
@@ -101,11 +101,8 @@ fig.set_ylabel("Firing rate (spk/s)", fontsize=14);
 fig.set_xlabel("Direction (radians)", fontsize=14)
 fig.axhline(df_smooth[neuron].max()/2, color='red')
 fig.set_title(neuron, fontsize=14)
-fig.arrow(2.3, 11.57, 1.5, 14, ls="--")
-fig.annotate("", xy=(2.3, 11.57), xytext=(1.5, 14), arrowprops=dict(arrowstyle="->"))
-fig.text(0.42, 0.87, label, transform=ax.transAxes, fontsize=12,
-        verticalalignment='top', bbox = props)
-
+fig.annotate(label, xytext=(1.0, 12), xy=(3.88, 25.9), 
+             arrowprops=dict(arrowstyle="->"), bbox = props, fontsize=12)
 plt.savefig(output + '/tun_plot_' + neuron + '.pdf', bbox_inches = 'tight')
 
 
@@ -125,14 +122,20 @@ plt.plot(phase, df_smooth[neuron], color ='darkorange', projection = 'polar')
 raws = int(np.ceil(len(df_smooth.columns)/col))
 #Get columns names
 name_cols = df_tuning.columns
-fig = plt.figure(figsize=(12,160))
+# these are matplotlib.patch.Patch properties
+props = dict(boxstyle='round', facecolor='linen', edgecolor = 'linen', alpha=0.5)
+fig = plt.figure(figsize=(25,160))
 for c,num in zip(name_cols, range(1,len(df_smooth.columns)+1)):
+    label= 'width = ' + str( df_tun_widths.loc[c].values[0])
     ax = fig.add_subplot(raws,col,num)
     ax.plot(df_smooth[c], color ='darkorange')
+    ax.axhline(df_smooth[c].max()/2, color='red')
     #ax.set_xlabel('radians')
     ax.set_title(c)
+    ax.text(0.03, 0.05, label, transform=ax.transAxes, fontsize=10, 
+         verticalalignment='top', bbox = props)
 plt.tight_layout()
-plt.savefig( output + '/tuning_plot_' + '.pdf')
+plt.savefig( output + '/tuning_plot' + '.pdf')
 
 
 #Polar plots
