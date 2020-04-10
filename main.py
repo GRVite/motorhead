@@ -151,12 +151,3 @@ for i in eplist:
         errors = result.loc[i].std()
         result.loc[i].plot.bar(title = "Speed of the needle")
         xticks(np.arange(len(names)), names)
-
-a=complexity
-a.plot()
-del a['Type']
-mu, sigma = "This", 15
-plt.figure(figsize=(8,8)); plt.axhline(0, color='green'); plt.ylim([0,1]), plt.ylabel("complexity value"),
-plt.text(1, 0.5, r'$\mu=100,\ \sigma=15$'), plt.title('Level of complexity'); 
-parallel_coordinates(a.iloc[0:5][['Right Nerve', 'Left Nerve',  'Chiasm',  'ID']], "ID", color=['y', 'b', 'm', 'y', 'm'])
-parallel_coordinates(a.iloc[6:11][['Right Nerve', 'Left Nerve', 'Chiasm', 'ID']], "ID", color=['#556270', '556271', '556272', '556273', '556271'])
